@@ -26,6 +26,9 @@
         .team-name { flex: 1; font-weight: bold; font-size: 1.05rem; }
         .team-left { text-align: right; padding-right: 15px; }
         .team-right { text-align: left; padding-left: 15px; }
+        .team-name input { font-size: 1rem; font-weight: bold; padding: 4px; width: 80%; border: 1px dashed var(--warning); border-radius: 4px; }
+        .team-left input { text-align: right; }
+        .team-right input { text-align: left; }
         .score-inputs { display: flex; align-items: center; gap: 5px; background: #e3fafc; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--secondary); font-weight: bold; color: var(--secondary); }
         input[type="number"] { width: 35px; height: 30px; text-align: center; font-size: 1.1rem; font-weight: bold; border: 1px solid #ced4da; border-radius: 4px; }
         .typer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f3f5; padding: 8px; border-radius: 6px; font-size: 0.9rem; }
@@ -39,13 +42,19 @@
         .actions { text-align: center; margin: 20px 0; position: sticky; bottom: 10px; display: flex; justify-content: center; gap: 10px; z-index: 99; }
         .btn-save { padding: 12px 30px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .btn-api { padding: 12px 20px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
+        .admin-toggle { text-align: center; margin-bottom: 10px; }
+        .admin-toggle button { background: none; border: none; color: #bbb; cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Wiktoria, Janek i Miłosz — Wyniki pobierają się same z bazy FIFA live!</p>
+    <p class="subtitle">Wiktoria, Janek i Miłosz — Wyniki i zaawansowana drabinka pucharowa</p>
+
+    <div class="admin-toggle">
+        <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw zespołów w drabince)</button>
+    </div>
 
     <div class="leaderboard">
         <div class="player-score">💃 Wiktoria<span id="score-p1">0</span></div>
@@ -73,7 +82,7 @@
 
     <div class="actions">
         <button class="btn-api" onclick="fetchLiveResults()">🔄 POBIERZ WYNIKI LIVE</button>
-        <button class="btn-save" onclick="saveDataToCloud()">💾 ZAPISZ NASZE TYPY</button>
+        <button class="btn-save" onclick="saveDataToCloud()">💾 ZAPISZ NASZE DANE</button>
     </div>
 </div>
 
@@ -81,6 +90,8 @@
     let currentPhase = 'grupowa'; 
     let currentGroupFilter = 'ALL';
     let currentDateFilter = 'ALL';
+    let adminMode = false;
+    let customTeamNames = {};
 
     const matches = [
         // KOLEJKA 1
@@ -132,8 +143,8 @@
         { id: 44, phase: 'grupowa', group: 'J', date: '23.06', teamA: 'Algieria', teamB: 'Jordania' },
         { id: 45, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Portugalia', teamB: 'Ghana' },
         { id: 46, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Panama', teamB: 'DR Konga' },
-        { id: 47, phase: 'grupowa', group: 'L', date: '23.06', teamA: 'Anglia', teamB: 'Uzbekistan' },
-        { id: 48, phase: 'grupowa', group: 'L', date: '24.06', teamA: 'Kolumbia', teamB: 'Chorwacja' },
+        { id: 47, phase: 'grupowa', group: 'L', date: '23.06', teamA: 'Anglia', teamB: 'Chorwacja' },
+        { id: 48, phase: 'grupowa', group: 'L', date: '24.06', teamA: 'Uzbekistan', teamB: 'Kolumbia' },
 
         // KOLEJKA 3
         { id: 49, phase: 'grupowa', group: 'A', date: '24.06', teamA: 'RPA', teamB: 'Korea Płd.' },
@@ -206,7 +217,6 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Dynamicznie budujemy listę unikalnych dni do paska filtrów
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
@@ -238,19 +248,30 @@
             card.className = `match-card ${m.phase === 'pucharowa' ? 'pucharowa' : ''}`;
             const infoGrupa = m.phase === 'grupowa' ? `GRUPA ${m.group}` : m.group;
 
+            let nazwaA = customTeamNames[`nameA_${m.id}`] || m.teamA;
+            let nazwaB = customTeamNames[`nameB_${m.id}`] || m.teamB;
+
+            let teamASection = `${nazwaA}`;
+            let teamBSection = `${nazwaB}`;
+
+            if (adminMode && m.phase === 'pucharowa') {
+                teamASection = `<input type="text" id="nameA_in_${m.id}" value="${nazwaA}" onchange="saveCustomTeamName(${m.id}, 'A')">`;
+                teamBSection = `<input type="text" id="nameB_in_${m.id}" value="${nazwaB}" onchange="saveCustomTeamName(${m.id}, 'B')">`;
+            }
+
             card.innerHTML = `
                 <div class="match-header">
                     <span>🏆 ${infoGrupa} (Mecz #${m.id})</span>
                     <span>📅 ${m.date}</span>
                 </div>
                 <div class="match-main">
-                    <div class="team-name team-left">${m.teamA}</div>
+                    <div class="team-name team-left">${teamASection}</div>
                     <div class="score-inputs">
                         <span id="rA_${m.id}">-</span>
                         <span>:</span>
                         <span id="rB_${m.id}">-</span>
                     </div>
-                    <div class="team-name team-right">${m.teamB}</div>
+                    <div class="team-name team-right">${teamBSection}</div>
                 </div>
                 <div class="typer-grid">
                     <div class="typer-col">
@@ -283,7 +304,19 @@
         });
     }
 
-    // Bezpośrednie pobieranie z oficjalnego serwera API (bez wadliwych proxy)
+    function toggleAdminMode() {
+        adminMode = !adminMode;
+        buildMatches();
+        loadDataFromCloud();
+    }
+
+    async function saveCustomTeamName(matchId, side) {
+        const val = document.getElementById(`name${side}_in_${matchId}`).value;
+        if(!supabaseClient) return;
+        await supabaseClient.from('typer_scores').upsert({ id: `name${side}_${matchId}`, value: val });
+        customTeamNames[`name${side}_${matchId}`] = val;
+    }
+
     async function fetchLiveResults() {
         try {
             const response = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
@@ -293,7 +326,16 @@
             if(!data.matches) return;
             
             matches.forEach(m => {
-                const apiMatch = data.matches.find(x => x.homeTeam.name && x.homeTeam.name.toLowerCase().includes(m.teamA.toLowerCase()));
+                // Elastyczne szukanie meczu: ignoruje dopiski typu '/Baraż' i sprawdza znane państwa (np. Urugwaj)
+                const nazwaA = (customTeamNames[`nameA_${m.id}`] || m.teamA).split('/')[0].toLowerCase();
+                const nazwaB = (customTeamNames[`nameB_${m.id}`] || m.teamB).split('/')[0].toLowerCase();
+
+                const apiMatch = data.matches.find(x => 
+                    x.homeTeam.name && x.awayTeam.name &&
+                    (x.homeTeam.name.toLowerCase().includes(nazwaA) || x.awayTeam.name.toLowerCase().includes(nazwaA) ||
+                     x.homeTeam.name.toLowerCase().includes(nazwaB) || x.awayTeam.name.toLowerCase().includes(nazwaB))
+                );
+                
                 if(apiMatch && apiMatch.score.fullTime.home !== null) {
                     const hScore = apiMatch.score.fullTime.home;
                     const aScore = apiMatch.score.fullTime.away;
@@ -311,7 +353,7 @@
             alert("Wyniki na żywo zaktualizowane pomyślnie!");
         } catch (err) {
             console.error(err);
-            alert("Błąd połączenia z bazą wyników live. Odczekaj chwilę (limit zapytań API) i spróbuj ponownie.");
+            alert("Błąd pobierania wyników live. Poczekaj chwilę i spróbuj ponownie.");
         }
     }
 
@@ -367,13 +409,22 @@
         });
         const { error } = await supabaseClient.from('typer_scores').upsert(rows);
         if(error) alert("Błąd zapisu danych.");
-        else alert("🎯 Wasze typy zostały zapisane w chmurze Supabase!");
+        else alert("🎯 Wasze typy (oraz ewentualne modyfikacje drabinki) zostały zapisane!");
     }
 
     async function loadDataFromCloud() {
         if(!supabaseClient) return;
         const { data } = await supabaseClient.from('typer_scores').select('*');
         if(!data) return;
+        
+        data.forEach(row => {
+            if(row.id.startsWith('name')) {
+                customTeamNames[row.id] = row.value;
+            }
+        });
+        
+        buildMatches();
+
         data.forEach(row => {
             const elInput = document.getElementById(row.id);
             const elSpan = document.getElementById(row.id);
