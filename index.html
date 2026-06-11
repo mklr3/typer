@@ -30,6 +30,7 @@
         .team-left input { text-align: right; }
         .team-right input { text-align: left; }
         .score-inputs { display: flex; align-items: center; gap: 5px; background: #e3fafc; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--secondary); font-weight: bold; color: var(--secondary); }
+        .score-inputs input { width: 30px; height: 25px; text-align: center; font-weight: bold; border: 1px solid var(--secondary); border-radius: 4px; }
         input[type="number"] { width: 35px; height: 30px; text-align: center; font-size: 1.1rem; font-weight: bold; border: 1px solid #ced4da; border-radius: 4px; }
         .typer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f3f5; padding: 8px; border-radius: 6px; font-size: 0.9rem; }
         .typer-col { display: flex; flex-direction: column; align-items: center; gap: 3px; background: white; padding: 5px; border-radius: 4px; border: 1px solid #e9ecef; }
@@ -82,7 +83,7 @@
 
     <div class="actions">
         <button class="btn-api" onclick="loadDataFromCloud()">🔄 ODŚWIEŻ WYNIKI LIVE</button>
-        <button class="btn-save" onclick="saveDataToCloud()">💾 ZAPISZ MOJE WPISY</button>
+        <button class="btn-save" onclick="saveDataToCloud()">💾 ZAPISZ NASZE WPISY</button>
     </div>
 </div>
 
@@ -211,6 +212,10 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
+    // FIX: Poprawne ładowanie oficjalnego klienta Supabase bez konfliktów nazw
+    const globalSupabaseInstance = window.supabase;
+    const supabaseClient = globalSupabaseInstance.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
@@ -248,13 +253,11 @@
             let teamASection = `${nazwaA}`;
             let teamBSection = `${nazwaB}`;
 
-            // Tryb Pilota dla Admina do zmiany nazw zespołów i wyników meczów
             if (adminMode) {
                 teamASection = `<input type="text" id="nameA_in_${m.id}" value="${nazwaA}" onchange="saveCustomTeamName(${m.id}, 'A')">`;
                 teamBSection = `<input type="text" id="nameB_in_${m.id}" value="${nazwaB}" onchange="saveCustomTeamName(${m.id}, 'B')">`;
             }
 
-            // Sprawdzamy czy oficjalny wynik istnieje w chmurze
             let oficjalnyWynikA = customTeamNames[`rA_${m.id}`] || "-";
             let oficjalnyWynikB = customTeamNames[`rB_${m.id}`] || "-";
 
@@ -375,13 +378,14 @@
             });
         });
         const { error } = await supabaseClient.from('typer_scores').upsert(rows);
-        if(error) alert("Błąd zapisu danych.");
-        else alert("🎯 Wasze typy oraz modyfikacje zostały trwale zapisane w chmurze!");
+        if(error) alert("Błąd zapisu danych: " + error.message);
+        else alert("🎯 Wasze typy zostały bezpiecznie zapisane w Supabase!");
     }
 
     async function loadDataFromCloud() {
         if(!supabaseClient) return;
-        const { data } = await supabaseClient.from('typer_scores').select('*');
+        const { data, error } = await supabaseClient.from('typer_scores').select('*');
+        if(error) { console.error(error); return; }
         if(!data) return;
         
         data.forEach(row => {
