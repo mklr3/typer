@@ -217,6 +217,11 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
+    function toggleAdminMode() {
+        adminMode = !adminMode;
+        buildMatches();
+    }
+
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
@@ -322,19 +327,28 @@
         calculatePoints();
     }
 
+    // POPRAWIONE: Bezpieczne pobieranie wartości z okienek bez błędów identyfikatorów
     function saveLocalInput(matchId, prefix) {
-        const elA = document.getElementById(`${prefix}A_in_${matchId}`) || document.getElementById(`${prefix}A_${matchId}`);
-        const elB = document.getElementById(`${prefix}B_in_${matchId}`) || document.getElementById(`${prefix}B_${matchId}`);
-        const singleInput = document.getElementById(`${prefix}_in_${matchId}`);
-
-        if (prefix === 'nameA' || prefix === 'nameB') {
-            if(singleInput) customTeamNames[`${prefix}_${matchId}`] = singleInput.value;
-        } else if (prefix === 'rA' || prefix === 'rB') {
-            const rInput = document.getElementById(`${prefix}_in_${matchId}`);
-            if(rInput) customTeamNames[`${prefix}_${matchId}`] = rInput.value;
+        let elA = document.getElementById(`${prefix}_in_${matchId}`) || document.getElementById(`${prefix}_${matchId}`);
+        let elB = document.getElementById(`${prefix.slice(0,-1)}B_in_${matchId}`) || document.getElementById(`${prefix.slice(0,-1)}B_${matchId}`);
+        
+        if (prefix.startsWith('p')) {
+            // Bezpieczne pobranie dla okienek typów graczy p1A, p2A itd.
+            const userPrefix = prefix.slice(0, 3); // np. 'p1A' lub 'p2A'
+            const userPrefixB = userPrefix.slice(0, 2) + 'B'; // np. 'p1B' lub 'p2B'
+            const inputA = document.getElementById(`${userPrefix}_${matchId}`);
+            const inputB = document.getElementById(`${userPrefixB}_${matchId}`);
+            
+            if(inputA) customTeamNames[`${userPrefix}_${matchId}`] = inputA.value;
+            if(inputB) customTeamNames[`${userPrefixB}_${matchId}`] = inputB.value;
+        } else if (prefix === 'nameA' || prefix === 'nameB') {
+            const teamInput = document.getElementById(`${prefix}_in_${matchId}`);
+            if(teamInput) customTeamNames[`${prefix}_${matchId}`] = teamInput.value;
         } else {
-            if(elA) customTeamNames[`${prefix}_${matchId}`] = elA.value;
-            if(elB) customTeamNames[`${prefix}B_${matchId}`] = elB.value;
+            const rInputA = document.getElementById(`rA_in_${matchId}`);
+            const rInputB = document.getElementById(`rB_in_${matchId}`);
+            if(rInputA) customTeamNames[`rA_${matchId}`] = rInputA.value;
+            if(rInputB) customTeamNames[`rB_${matchId}`] = rInputB.value;
         }
         calculatePoints();
     }
@@ -380,30 +394,21 @@
         }
     }
 
-    // NOWA FORMULA MATEMATYCZNA: Zliczanie punktów na prostych zasadach: 3 za wynik, 2 za rozstrzygnięcie, 1 za różnicę bramkową
     function getPoints(pA, pB, rA, rB) {
         if (pA === "" || pB === "" || rA === "" || rB === "" || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
         const realA = parseInt(rA), realB = parseInt(rB);
         
-        // 1. Dokładny wynik
         if (predA === realA && predB === realB) return 3;
         
-        // 2. Trafione rozstrzygnięcie (kto wygrał lub remis)
         const signPred = Math.sign(predA - predB);
         const signReal = Math.sign(realA - realB);
         
         if (signPred === signReal) {
-            // Jeśli był remis, dajemy z automatu 2 punkty za trafienie remisu
             if (signReal === 0) return 2;
-            
-            // Jeśli to nie był remis, ale różnica goli się zgadza (np. typ 2:0, wynik 3:1) -> wpada 1 pkt
             if ((predA - predB) === (realA - realB)) return 1;
-            
-            // W przeciwnym razie wpada standardowe 2 pkt za samo wskazanie zwycięzcy
             return 2;
         }
-        
         return 0;
     }
 
@@ -450,7 +455,7 @@
         try {
             const { error } = await supabaseClient.from('typer_scores').upsert(rows);
             if(error) alert("Błąd chmury Supabase: " + error.message);
-            else alert("🎯 Wszystkie Wasze typy i wyniki zostały trwale zapisane w chmurze!");
+            else alert("🎯 Wasze typy i wyniki zostały trwale zapisane w chmurze!");
         } catch (e) {
             console.error(e);
             alert("Błąd połączenia. Spróbuj zapisać typy ponownie.");
