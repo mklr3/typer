@@ -17,7 +17,7 @@
         .nav-tabs, .filter-tabs { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 15px; }
         .tab-btn { padding: 8px 16px; background: #e9ecef; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: white; }
-        .filter-btn { padding: 5px 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin: 2px; }
+        .filter-btn { padding: 5px 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
         .filter-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
         .match-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 12px; border-left: 5px solid #dee2e6; }
         .match-card.pucharowa { border-left-color: var(--warning); }
@@ -26,11 +26,7 @@
         .team-name { flex: 1; font-weight: bold; font-size: 1.05rem; }
         .team-left { text-align: right; padding-right: 15px; }
         .team-right { text-align: left; padding-left: 15px; }
-        .team-name input { font-size: 1rem; font-weight: bold; padding: 4px; width: 80%; border: 1px dashed var(--warning); border-radius: 4px; }
-        .team-left input { text-align: right; }
-        .team-right input { text-align: left; }
         .score-inputs { display: flex; align-items: center; gap: 5px; background: #e3fafc; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--secondary); font-weight: bold; color: var(--secondary); }
-        .score-inputs input { width: 30px; height: 25px; text-align: center; font-weight: bold; border: 1px solid var(--secondary); border-radius: 4px; }
         input[type="number"] { width: 35px; height: 30px; text-align: center; font-size: 1.1rem; font-weight: bold; border: 1px solid #ced4da; border-radius: 4px; }
         .typer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f3f5; padding: 8px; border-radius: 6px; font-size: 0.9rem; }
         .typer-col { display: flex; flex-direction: column; align-items: center; gap: 3px; background: white; padding: 5px; border-radius: 4px; border: 1px solid #e9ecef; }
@@ -43,8 +39,6 @@
         .actions { text-align: center; margin: 20px 0; position: sticky; bottom: 10px; display: flex; justify-content: center; gap: 10px; z-index: 99; }
         .btn-save { padding: 12px 30px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .btn-api { padding: 12px 20px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
-        .admin-toggle { text-align: center; margin-bottom: 10px; }
-        .admin-toggle button { background: none; border: none; color: #bbb; cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -52,10 +46,6 @@
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
     <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Różnica goli = 1pkt</p>
-
-    <div class="admin-toggle">
-        <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw i oficjalnych wyników meczów)</button>
-    </div>
 
     <div class="leaderboard">
         <div class="player-score">💃 Wiktoria<span id="score-p1">0</span></div>
@@ -85,15 +75,8 @@
 </div>
 
 <script>
-    const SUPABASE_URL = "https://vmewefwvqxjyrqdnxntd.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtZXdlZnd2cXhqeXJxZG54bnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTE2MTUsImV4cCI6MjA5NjY4NzYxNX0.qqwQowaI7JEcMpHSWTKFXL5kPcyiBWKLqeGvriUBMVA";
-    const FOOTBALL_API_TOKEN = "c022840d3dee415784ddc5de74a16f44";
-
-    let supabaseClient = null;
     let currentPhase = 'grupowa';
     let currentGroupFilter = 'ALL';
-    let adminMode = false;
-    let localCustomCache = {}; 
 
     const matches = [
         // KOLEJKA 1
@@ -213,10 +196,11 @@
         { id: 104, phase: 'pucharowa', group: 'P', date: '19.07 (FINAŁ)', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
-    function toggleAdminMode() {
-        adminMode = !adminMode;
-        buildMatches();
-    }
+    const SUPABASE_URL = "https://vmewefwvqxjyrqdnxntd.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtZXdlZnd2cXhqeXJxZG54bnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTE2MTUsImV4cCI6MjA5NjY4NzYxNX0.qqwQowaI7JEcMpHSWTKFXL5kPcyiBWKLqeGvriUBMVA";
+    const FOOTBALL_API_TOKEN = "c022840d3dee415784ddc5de74a16f44";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function buildMatches() {
         const container = document.getElementById('matches-container');
@@ -228,71 +212,42 @@
 
             const card = document.createElement('div');
             card.className = `match-card ${m.phase === 'pucharowa' ? 'pucharowa' : ''}`;
-            
-            let nazwaA = localCustomCache[`nameA_${m.id}`] || m.teamA;
-            let nazwaB = localCustomCache[`nameB_${m.id}`] || m.teamB;
-
-            let teamASection = `${nazwaA}`;
-            let teamBSection = `${nazwaB}`;
-
-            if (adminMode) {
-                teamASection = `<input type="text" id="nameA_in_${m.id}" value="${nazwaA}" onchange="saveLocalInput(${m.id}, 'nameA')">`;
-                teamBSection = `<input type="text" id="nameB_in_${m.id}" value="${nazwaB}" onchange="saveLocalInput(${m.id}, 'nameB')">`;
-            }
-
-            let oficjalnyWynikA = localCustomCache[`rA_${m.id}`] || "-";
-            let oficjalnyWynikB = localCustomCache[`rB_${m.id}`] || "-";
-
-            let sekcjaWyniku = `<span id="rA_${m.id}">${oficjalnyWynikA}</span><span>:</span><span id="rB_${m.id}">${oficjalnyWynikB}</span>`;
-            if (adminMode) {
-                sekcjaWyniku = `
-                    <input type="number" min="0" id="rA_in_${m.id}" value="${oficjalnyWynikA === '-' ? '' : oficjalnyWynikA}" style="width:30px" onchange="saveLocalInput(${m.id}, 'rA')">
-                    <span>:</span>
-                    <input type="number" min="0" id="rB_in_${m.id}" value="${oficjalnyWynikB === '-' ? '' : oficjalnyWynikB}" style="width:30px" onchange="saveLocalInput(${m.id}, 'rB')">
-                `;
-            }
-
-            let v1A = localCustomCache[`p1A_${m.id}`] || "";
-            let v1B = localCustomCache[`p1B_${m.id}`] || "";
-            let v2A = localCustomCache[`p2A_${m.id}`] || "";
-            let v2B = localCustomCache[`p2B_${m.id}`] || "";
-            let v3A = localCustomCache[`p3A_${m.id}`] || "";
-            let v3B = localCustomCache[`p3B_${m.id}`] || "";
-
             card.innerHTML = `
                 <div class="match-header">
                     <span>${m.phase === 'grupowa' ? 'GRUPA ' + m.group : 'FAZA PUCHAROWA'} (Mecz #${m.id})</span>
                     <span>📅 ${m.date}</span>
                 </div>
                 <div class="match-main">
-                    <div class="team-name team-left">${teamASection}</div>
+                    <div class="team-name team-left">${m.teamA}</div>
                     <div class="score-inputs">
-                        ${sekcjaWyniku}
+                        <span id="rA_${m.id}">-</span>
+                        <span>:</span>
+                        <span id="rB_${m.id}">-</span>
                     </div>
-                    <div class="team-name team-right">${teamBSection}</div>
+                    <div class="team-name team-right">${m.teamB}</div>
                 </div>
                 <div class="typer-grid">
                     <div class="typer-col">
                         <span class="typer-name">💃 Wiktoria</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p1A_${m.id}" value="${v1A}" onchange="saveLocalInput(${m.id}, 'p1A')"> :
-                            <input type="number" min="0" id="p1B_${m.id}" value="${v1B}" onchange="saveLocalInput(${m.id}, 'p1B')">
+                            <input type="number" min="0" id="p1A_${m.id}" onchange="calculatePoints()"> :
+                            <input type="number" min="0" id="p1B_${m.id}" onchange="calculatePoints()">
                         </div>
                         <span class="pts-badge" id="pts1_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">⚽ Janek</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p2A_${m.id}" value="${v2A}" onchange="saveLocalInput(${m.id}, 'p2A')"> :
-                            <input type="number" min="0" id="p2B_${m.id}" value="${v2B}" onchange="saveLocalInput(${m.id}, 'p2B')">
+                            <input type="number" min="0" id="p2A_${m.id}" onchange="calculatePoints()"> :
+                            <input type="number" min="0" id="p2B_${m.id}" onchange="calculatePoints()">
                         </div>
                         <span class="pts-badge" id="pts2_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">🔥 Miłosz</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p3A_${m.id}" value="${v3A}" onchange="saveLocalInput(${m.id}, 'p3A')"> :
-                            <input type="number" min="0" id="p3B_${m.id}" value="${v3B}" onchange="saveLocalInput(${m.id}, 'p3B')">
+                            <input type="number" min="0" id="p3A_${m.id}" onchange="calculatePoints()"> :
+                            <input type="number" min="0" id="p3B_${m.id}" onchange="calculatePoints()">
                         </div>
                         <span class="pts-badge" id="pts3_${m.id}">0 pkt</span>
                     </div>
@@ -300,27 +255,6 @@
             `;
             container.appendChild(card);
         });
-        calculatePoints();
-    }
-
-    function saveLocalInput(matchId, prefix) {
-        if (prefix.startsWith('p')) {
-            const userPrefix = prefix.slice(0, 3); 
-            const userPrefixB = userPrefix.slice(0, 2) + 'B'; 
-            const inputA = document.getElementById(`${userPrefix}_${matchId}`);
-            const inputB = document.getElementById(`${userPrefixB}_${matchId}`);
-            if(inputA) localCustomCache[`${userPrefix}_${matchId}`] = inputA.value;
-            if(inputB) localCustomCache[`${userPrefixB}_${matchId}`] = inputB.value;
-        } else if (prefix === 'nameA' || prefix === 'nameB') {
-            const teamInput = document.getElementById(`${prefix}_in_${matchId}`);
-            if(teamInput) localCustomCache[`${prefix}_${matchId}`] = teamInput.value;
-        } else {
-            const rInputA = document.getElementById(`rA_in_${matchId}`);
-            const rInputB = document.getElementById(`rB_in_${matchId}`);
-            if(rInputA) localCustomCache[`rA_${matchId}`] = rInputA.value;
-            if(rInputB) localCustomCache[`rB_${matchId}`] = rInputB.value;
-        }
-        calculatePoints();
     }
 
     async function fetchLiveResults() {
@@ -334,60 +268,69 @@
             
             if(!data.matches) return;
             
-            let changed = false;
             matches.forEach(m => {
                 const apiMatch = data.matches.find(x => x.homeTeam.name && x.homeTeam.name.toLowerCase().includes(m.teamA.toLowerCase()));
                 if(apiMatch && apiMatch.score.fullTime.home !== null) {
                     const hScore = apiMatch.score.fullTime.home;
                     const aScore = apiMatch.score.fullTime.away;
                     
-                    localCustomCache[`rA_${m.id}`] = String(hScore);
-                    localCustomCache[`rB_${m.id}`] = String(aScore);
-                    changed = true;
+                    const elA = document.getElementById(`rA_${m.id}`);
+                    const elB = document.getElementById(`rB_${m.id}`);
+                    if(elA) elA.innerText = hScore;
+                    if(elB) elB.innerText = aScore;
                     
                     saveScoreToCloud(`rA_${m.id}`, hScore);
                     saveScoreToCloud(`rB_${m.id}`, aScore);
                 }
             });
-            if(changed) {
-                buildMatches();
-                alert("Wyniki na żywo zaktualizowane pomyślnie przez tunel CORS!");
-            } else {
-                alert("Połączenie udane. Brak nowych rozstrzygniętych meczów w oficjalnym systemie.");
-            }
+            calculatePoints();
+            alert("Wyniki na żywo zaktualizowane pomyślnie przez tunel CORS!");
         } catch (err) {
             console.error(err);
             alert("Błąd pobierania wyników live. Serwer FIFA może być przeciążony, spróbuj ponownie za chwilę.");
         }
     }
 
+    // ZMODYFIKOWANA REGULA PUNKTACJI: Klasyczne 3, 2, 1
     function getPoints(pA, pB, rA, rB) {
         if (pA === "" || pB === "" || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
         const realA = parseInt(rA), realB = parseInt(rB);
         
+        // 1. Dokładny wynik -> 3 pkt
         if (predA === realA && predB === realB) return 3;
         
         const signPred = Math.sign(predA - predB);
         const signReal = Math.sign(realA - realB);
         
+        // Jeśli trafiono rozstrzygnięcie (zwycięzca lub remis)
         if (signPred === signReal) {
+            // Remisy bez dokładnego wyniku -> automatycznie 2 pkt za rozstrzygnięcie
             if (signReal === 0) return 2;
+            
+            // Mecze rozstrzygnięte: jeśli różnica goli jest identyczna -> 1 pkt
             if ((predA - predB) === (realA - realB)) return 1;
+            
+            // Sam zwycięzca bez różnicy bramkowej -> 2 pkt
             return 2;
         }
+        
         return 0;
     }
 
     function calculatePoints() {
         let t1 = 0, t2 = 0, t3 = 0;
         matches.forEach(m => {
-            let rA = localCustomCache[`rA_${m.id}`] || "-";
-            let rB = localCustomCache[`rB_${m.id}`] || "-";
+            const elRA = document.getElementById(`rA_${m.id}`);
+            const elRB = document.getElementById(`rB_${m.id}`);
+            const rA = elRA ? elRA.innerText : "-";
+            const rB = elRB ? elRB.innerText : "-";
             
             for (let p = 1; p <= 3; p++) {
-                const pA = localCustomCache[`p${p}A_${m.id}`] || "";
-                const pB = localCustomCache[`p${p}B_${m.id}`] || "";
+                const elPA = document.getElementById(`p${p}A_${m.id}`);
+                const elPB = document.getElementById(`p${p}B_${m.id}`);
+                const pA = elPA ? elPA.value : "";
+                const pB = elPB ? elPB.value : "";
                 
                 const pts = getPoints(pA, pB, rA, rB);
                 const b = document.getElementById(`pts${p}_${m.id}`);
@@ -409,20 +352,15 @@
     }
 
     async function saveDataToCloud() {
-        if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
+        if(!supabaseClient) { alert("Brak połączenia z bazą danych!"); return; }
         const rows = [];
-        Object.keys(localCustomCache).forEach(key => {
-            const val = localCustomCache[key];
-            if(val !== undefined && val !== null && String(val).trim() !== "") {
-                rows.push({ id: key, value: String(val) });
-            }
+        matches.forEach(m => {
+            ['p1A','p1B','p2A','p2B','p3A','p3B'].forEach(k => {
+                const el = document.getElementById(`${k}_${m.id}`);
+                const val = el ? el.value : "";
+                if(val !== "") rows.push({ id: `${k}_${m.id}`, value: val });
+            });
         });
-
-        if(rows.length === 0) {
-            alert("Nie wpisano żadnych wyników ani typów do wysłania.");
-            return;
-        }
-
         const { error } = await supabaseClient.from('typer_scores').upsert(rows);
         if(error) alert("Błąd zapisu: " + error.message);
         else alert("🎯 Wasze typy zostały trwale zapisane w chmurze Supabase!");
@@ -432,40 +370,34 @@
         if(!supabaseClient) return;
         const { data } = await supabaseClient.from('typer_scores').select('*');
         if(!data) return;
-        
-        localCustomCache = {};
         data.forEach(row => {
-            localCustomCache[row.id] = row.value;
+            const elInput = document.getElementById(row.id);
+            const elSpan = document.getElementById(row.id);
+            if(elInput && elInput.tagName === "INPUT") elInput.value = row.value;
+            else if(elSpan) elSpan.innerText = row.value;
         });
-        buildMatches();
+        calculatePoints();
     }
 
     function switchPhase(phase) {
         currentPhase = phase;
-        document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-phase-${phase}`).classList.add('active');
         document.getElementById('group-filters').style.display = phase === 'grupowa' ? 'flex' : 'none';
         buildMatches();
+        loadDataFromCloud();
     }
 
     function filterGroup(group) {
         currentGroupFilter = group;
-        document.querySelectorAll('#group-filters .filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-group-${group}`).classList.add('active');
         buildMatches();
+        loadDataFromCloud();
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        try {
-            if (window.supabase && typeof window.supabase.createClient === 'function') {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch (err) {
-            console.error("Błąd połączenia z Supabase:", err);
-        }
-        buildDateFilters; 
-        loadDataFromCloud();
-    });
+    buildMatches();
+    loadDataFromCloud();
 </script>
 </body>
 </html>
