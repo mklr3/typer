@@ -61,6 +61,7 @@
 
     <div class="nav-tabs">
         <button class="tab-btn active" id="btn-phase-grupowa" onclick="switchPhase('grupowa')">Faza Grupowa</button>
+        <button class="tab-btn" id="btn-phase-timeline" onclick="switchPhase('timeline')">Dzień po Dniu 📅</button>
         <button class="tab-btn" id="btn-phase-pucharowa" onclick="switchPhase('pucharowa')">Drabinka Pucharowa</button>
     </div>
 
@@ -71,6 +72,8 @@
             grupy.forEach(g => document.write(`<button class="filter-btn" id="btn-group-${g}" onclick="filterGroup('${g}')">Grupa ${g}</button>`));
         </script>
     </div>
+
+    <div class="filter-tabs" id="date-filters" style="display: none;"></div>
 
     <div id="matches-container"></div>
 
@@ -83,7 +86,9 @@
 <script>
     let currentPhase = 'grupowa';
     let currentGroupFilter = 'ALL';
-    let adminMode = false; // DODANE: Status trybu admina
+    let currentDateFilter = 'ALL';
+    let adminMode = false;
+    let appData = {}; // Super szybka pamięć lokalna
 
     const matches = [
         // KOLEJKA 1
@@ -181,7 +186,7 @@
         { id: 86, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '2C', teamB: '2F' },
         { id: 87, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1H', teamB: '2J' },
         { id: 88, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1J', teamB: '2I' },
-        
+         
         { id: 89, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M73', teamB: 'Zwycięzca M74' },
         { id: 90, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M75', teamB: 'Zwycięzca M76' },
         { id: 91, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M77', teamB: 'Zwycięzca M78' },
@@ -209,52 +214,284 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // DODANE: Funkcja do przełączania trybu i resetowania widoku
+    // FUNKCJA: Włączanie Trybu Admina
     function toggleAdminMode() {
         adminMode = !adminMode;
         buildMatches();
-        loadDataFromCloud();
     }
 
+    // FUNKCJA: Renderowanie filtrów dla dat
+    function buildDateFilters() {
+        const dateContainer = document.getElementById('date-filters');
+        if(!dateContainer) return;
+        const unikalneDaty = [...new Set(matches.map(m => m.date))];
+        
+        let html = `<button class="filter-btn active" id="btn-date-ALL" onclick="filterDate('ALL')">Wszystkie Dni</button>`;
+        unikalneDaty.forEach(d => {
+            const cssId = d.replace(/[\.\s\(\)\/]/g, '-');
+            html += `<button class="filter-btn" id="btn-date-${cssId}" onclick="filterDate('${d}')">${d}</button>`;
+        });
+        dateContainer.innerHTML = html;
+    }
+
+    // PRZEBUDOWANA: Renderowanie meczów (czyta z pamięci appData)
     function buildMatches() {
         const container = document.getElementById('matches-container');
         container.innerHTML = '';
 
         matches.forEach(m => {
-            if (m.phase !== currentPhase) return;
+            // Logika wyświetlania według aktywnych filtrów zakładek
+            if (currentPhase === 'grupowa' && m.phase !== 'grupowa') return;
+            if (currentPhase === 'pucharowa' && m.phase !== 'pucharowa') return;
             if (currentPhase === 'grupowa' && currentGroupFilter !== 'ALL' && m.group !== currentGroupFilter) return;
+            if (currentPhase === 'timeline' && currentDateFilter !== 'ALL' && m.date !== currentDateFilter) return;
 
             const card = document.createElement('div');
             card.className = `match-card ${m.phase === 'pucharowa' ? 'pucharowa' : ''}`;
-            
-            // DODANE: Zmiana wyświetlania nazw zespołów na interaktywne w trybie Admina
-            let teamASection = `<span id="nameA_${m.id}">${m.teamA}</span>`;
-            let teamBSection = `<span id="nameB_${m.id}">${m.teamB}</span>`;
-            
-            // DODANE: Zmiana wyniku głównego na pola Input w trybie Admina
-            let sekcjaWyniku = `
-                <span id="rA_${m.id}">-</span>
-                <span>:</span>
-                <span id="rB_${m.id}">-</span>
-            `;
+            const infoGrupa = m.phase === 'grupowa' ? `GRUPA ${m.group}` : 'FAZA PUCHAROWA';
 
+            // Zawsze najpierw szukaj w pamięci (appData), a jeśli nie ma, weź domyślne z listy
+            let nazwaA = appData[`nameA_${m.id}`] || m.teamA;
+            let nazwaB = appData[`nameB_${m.id}`] || m.teamB;
+            let rA = appData[`rA_${m.id}`] || "-";
+            let rB = appData[`rB_${m.id}`] || "-";
+            let p1A = appData[`p1A_${m.id}`] || "";
+            let p1B = appData[`p1B_${m.id}`] || "";
+            let p2A = appData[`p2A_${m.id}`] || "";
+            let p2B = appData[`p2B_${m.id}`] || "";
+            let p3A = appData[`p3A_${m.id}`] || "";
+            let p3B = appData[`p3B_${m.id}`] || "";
+
+            let teamASection = `<span id="nameA_${m.id}">${nazwaA}</span>`;
+            let teamBSection = `<span id="nameB_${m.id}">${nazwaB}</span>`;
+            let sekcjaWyniku = `<span id="rA_${m.id}">${rA}</span><span>:</span><span id="rB_${m.id}">${rB}</span>`;
+
+            // Jeśli AdminMode jest włączony -> wstaw pola tekstowe (Inputs)
             if (adminMode) {
-                teamASection = `<input type="text" id="nameA_${m.id}" onchange="saveScoreToCloud('nameA_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
-                teamBSection = `<input type="text" id="nameB_${m.id}" onchange="saveScoreToCloud('nameB_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
+                teamASection = `<input type="text" value="${nazwaA}" onchange="cacheLocal('nameA_${m.id}', this.value); saveAdminDirect('nameA_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
+                teamBSection = `<input type="text" value="${nazwaB}" onchange="cacheLocal('nameB_${m.id}', this.value); saveAdminDirect('nameB_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
                 
                 sekcjaWyniku = `
-                    <input type="number" min="0" id="rA_${m.id}" onchange="saveScoreToCloud('rA_${m.id}', this.value); calculatePoints()" style="width:35px; border-color:var(--warning);">
+                    <input type="number" min="0" value="${rA !== '-' ? rA : ''}" onchange="cacheLocal('rA_${m.id}', this.value); saveAdminDirect('rA_${m.id}', this.value)" style="width:35px; border-color:var(--warning);">
                     <span>:</span>
-                    <input type="number" min="0" id="rB_${m.id}" onchange="saveScoreToCloud('rB_${m.id}', this.value); calculatePoints()" style="width:35px; border-color:var(--warning);">
+                    <input type="number" min="0" value="${rB !== '-' ? rB : ''}" onchange="cacheLocal('rB_${m.id}', this.value); saveAdminDirect('rB_${m.id}', this.value)" style="width:35px; border-color:var(--warning);">
                 `;
             }
 
             card.innerHTML = `
                 <div class="match-header">
-                    <span>${m.phase === 'grupowa' ? 'GRUPA ' + m.group : 'FAZA PUCHAROWA'} (Mecz #${m.id})</span>
+                    <span>${infoGrupa} (Mecz #${m.id})</span>
                     <span>📅 ${m.date}</span>
                 </div>
                 <div class="match-main">
                     <div class="team-name team-left">${teamASection}</div>
                     <div class="score-inputs">
-                        ${sek
+                        ${sekcjaWyniku}
+                    </div>
+                    <div class="team-name team-right">${teamBSection}</div>
+                </div>
+                <div class="typer-grid">
+                    <div class="typer-col">
+                        <span class="typer-name">💃 Wiktoria</span>
+                        <div class="typer-inputs">
+                            <input type="number" min="0" id="p1A_${m.id}" value="${p1A}" onchange="cacheLocal('p1A_${m.id}', this.value)"> :
+                            <input type="number" min="0" id="p1B_${m.id}" value="${p1B}" onchange="cacheLocal('p1B_${m.id}', this.value)">
+                        </div>
+                        <span class="pts-badge" id="pts1_${m.id}">0 pkt</span>
+                    </div>
+                    <div class="typer-col">
+                        <span class="typer-name">⚽ Janek</span>
+                        <div class="typer-inputs">
+                            <input type="number" min="0" id="p2A_${m.id}" value="${p2A}" onchange="cacheLocal('p2A_${m.id}', this.value)"> :
+                            <input type="number" min="0" id="p2B_${m.id}" value="${p2B}" onchange="cacheLocal('p2B_${m.id}', this.value)">
+                        </div>
+                        <span class="pts-badge" id="pts2_${m.id}">0 pkt</span>
+                    </div>
+                    <div class="typer-col">
+                        <span class="typer-name">🔥 Miłosz</span>
+                        <div class="typer-inputs">
+                            <input type="number" min="0" id="p3A_${m.id}" value="${p3A}" onchange="cacheLocal('p3A_${m.id}', this.value)"> :
+                            <input type="number" min="0" id="p3B_${m.id}" value="${p3B}" onchange="cacheLocal('p3B_${m.id}', this.value)">
+                        </div>
+                        <span class="pts-badge" id="pts3_${m.id}">0 pkt</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+        calculatePoints();
+    }
+
+    // SUPER WAŻNA FUNKCJA: Zapamiętuje na żywo to co wpiszesz (dzięki temu NIC nie znika po przełączeniu karty)
+    function cacheLocal(key, value) {
+        appData[key] = value;
+        calculatePoints();
+    }
+
+    // NATYCHMIASTOWY ZAPIS DLA ADMINA: Zapisuje oficjalny wynik w chmurze
+    async function saveAdminDirect(id, value) {
+        if(!supabaseClient) return;
+        await supabaseClient.from('typer_scores').upsert({ id: id, value: String(value) });
+    }
+
+    async function fetchLiveResults() {
+        try {
+            const proxyUrl = "https://api.allorigins.win/get?url=";
+            const targetUrl = encodeURIComponent('https://api.football-data.org/v4/competitions/WC/matches');
+            
+            const response = await fetch(proxyUrl + targetUrl);
+            const wrapper = await response.json();
+            const data = JSON.parse(wrapper.contents);
+            
+            if(!data.matches) return;
+            
+            let changed = false;
+            matches.forEach(m => {
+                const currentName = appData[`nameA_${m.id}`] || m.teamA;
+                const apiMatch = data.matches.find(x => x.homeTeam.name && x.homeTeam.name.toLowerCase().includes(currentName.toLowerCase()));
+                if(apiMatch && apiMatch.score.fullTime.home !== null) {
+                    const hScore = apiMatch.score.fullTime.home;
+                    const aScore = apiMatch.score.fullTime.away;
+                    
+                    appData[`rA_${m.id}`] = hScore;
+                    appData[`rB_${m.id}`] = aScore;
+                    changed = true;
+                    
+                    saveAdminDirect(`rA_${m.id}`, hScore);
+                    saveAdminDirect(`rB_${m.id}`, aScore);
+                }
+            });
+            if(changed) {
+                buildMatches();
+                alert("Wyniki na żywo zaktualizowane pomyślnie!");
+            } else {
+                alert("Połączenie udane. Brak nowych rozstrzygniętych meczów w bazie FIFA.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Błąd pobierania wyników live z FIFA. Spróbuj ponownie za chwilę.");
+        }
+    }
+
+    // PUNKTY: Reguła 3 - 2 - 1
+    function getPoints(pA, pB, rA, rB) {
+        if (pA === "" || pB === "" || rA === "-" || rB === "-") return 0;
+        const predA = parseInt(pA), predB = parseInt(pB);
+        const realA = parseInt(rA), realB = parseInt(rB);
+        
+        // 1. Dokładny wynik -> 3 pkt
+        if (predA === realA && predB === realB) return 3;
+        
+        const signPred = Math.sign(predA - predB);
+        const signReal = Math.sign(realA - realB);
+        
+        // 2. Rozstrzygnięcie lub Różnica Goli
+        if (signPred === signReal) {
+            if (signReal === 0) return 2; // Remis zawsze 2 pkt
+            if ((predA - predB) === (realA - realB)) return 1; // Różnica Goli 1 pkt
+            return 2; // Zwykłe zwycięstwo 2 pkt
+        }
+        
+        return 0;
+    }
+
+    function calculatePoints() {
+        let t1 = 0, t2 = 0, t3 = 0;
+        matches.forEach(m => {
+            let rA = appData[`rA_${m.id}`] || "-";
+            let rB = appData[`rB_${m.id}`] || "-";
+            
+            for (let p = 1; p <= 3; p++) {
+                const pA = appData[`p${p}A_${m.id}`] || "";
+                const pB = appData[`p${p}B_${m.id}`] || "";
+                
+                const pts = getPoints(pA, pB, rA, rB);
+                const b = document.getElementById(`pts${p}_${m.id}`);
+                if(b) { 
+                    b.innerText = `${pts} pkt`; 
+                    b.className = `pts-badge pts-${pts === 3 ? 3 : (pts === 2 ? 2 : (pts === 1 ? 1 : 0))}`; 
+                }
+                if(p===1) t1+=pts; if(p===2) t2+=pts; if(p===3) t3+=pts;
+            }
+        });
+        document.getElementById('score-p1').innerText = t1;
+        document.getElementById('score-p2').innerText = t2;
+        document.getElementById('score-p3').innerText = t3;
+    }
+
+    // ZAPIS GŁÓWNY TYPÓW GRACZY DO BAZY SUPABASE
+    async function saveDataToCloud() {
+        if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
+        
+        const rows = [];
+        matches.forEach(m => {
+            ['p1A','p1B','p2A','p2B','p3A','p3B'].forEach(k => {
+                const key = `${k}_${m.id}`;
+                const val = appData[key];
+                if(val !== undefined && val !== "") {
+                    rows.push({ id: key, value: String(val) });
+                }
+            });
+        });
+
+        if(rows.length === 0) {
+            alert("Nie masz żadnych wpisanych wyników do zapisania.");
+            return;
+        }
+
+        const { error } = await supabaseClient.from('typer_scores').upsert(rows);
+        if(error) alert("Błąd zapisu: " + error.message);
+        else alert("🎯 Wasze typy zostały zapisane na amen!");
+    }
+
+    // ODCZYT GŁÓWNY Z BAZY SUPABASE
+    async function loadDataFromCloud() {
+        if(!supabaseClient) return;
+        const { data } = await supabaseClient.from('typer_scores').select('*');
+        if(!data) return;
+        
+        data.forEach(row => {
+            appData[row.id] = row.value;
+        });
+        
+        buildMatches();
+    }
+
+    // LOGIKA: Przełączanie Głównych ZAKŁADEK
+    function switchPhase(phase) {
+        currentPhase = phase;
+        document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-phase-${phase}`).classList.add('active');
+        
+        document.getElementById('group-filters').style.display = phase === 'grupowa' ? 'flex' : 'none';
+        document.getElementById('date-filters').style.display = phase === 'timeline' ? 'flex' : 'none';
+        
+        buildMatches();
+    }
+
+    // LOGIKA: Przełączanie Grup
+    function filterGroup(group) {
+        currentGroupFilter = group;
+        document.querySelectorAll('#group-filters .filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-group-${group}`).classList.add('active');
+        buildMatches();
+    }
+
+    // LOGIKA: Przełączanie Dni "Dzień po dniu"
+    function filterDate(date) {
+        currentDateFilter = date;
+        document.querySelectorAll('#date-filters .filter-btn').forEach(b => b.classList.remove('active'));
+        const cssId = date === 'ALL' ? 'ALL' : date.replace(/[\.\s\(\)\/]/g, '-');
+        document.getElementById(`btn-date-${cssId}`).classList.add('active');
+        buildMatches();
+    }
+
+    // START APLIKACJI
+    window.addEventListener('DOMContentLoaded', () => {
+        buildDateFilters();
+        loadDataFromCloud();
+    });
+</script>
+</body>
+</html>
