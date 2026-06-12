@@ -51,7 +51,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Wiktoria, Janek i Miłosz — Stabilny zapis bez utraty danych</p>
+    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Gol drużyny = 1pkt</p>
 
     <div class="admin-toggle">
         <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw i oficjalnych wyników meczów)</button>
@@ -92,8 +92,7 @@
     let currentGroupFilter = 'ALL';
     let currentDateFilter = 'ALL';
     let adminMode = false;
-    let customTeamNames = {};
-    let cloudLoadedData = []; 
+    let customTeamNames = {}; // Przechowuje typy graczy, nazwy drużyn oraz oficjalne bramki
 
     const matches = [
         // KOLEJKA 1
@@ -213,7 +212,6 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
-    // APTEKARSKA DOKŁADNOŚĆ: Duża litera w nazwie Supabase zapobiega błędom krytycznym skryptu
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function buildDateFilters() {
@@ -254,8 +252,8 @@
             let teamBSection = `${nazwaB}`;
 
             if (adminMode) {
-                teamASection = `<input type="text" id="nameA_in_${m.id}" value="${nazwaA}" onchange="saveCustomTeamName(${m.id}, 'A')">`;
-                teamBSection = `<input type="text" id="nameB_in_${m.id}" value="${nazwaB}" onchange="saveCustomTeamName(${m.id}, 'B')">`;
+                teamASection = `<input type="text" id="nameA_in_${m.id}" value="${nazwaA}" onchange="saveLocalInput(${m.id}, 'nameA')">`;
+                teamBSection = `<input type="text" id="nameB_in_${m.id}" value="${nazwaB}" onchange="saveLocalInput(${m.id}, 'nameB')">`;
             }
 
             let oficjalnyWynikA = customTeamNames[`rA_${m.id}`] || "-";
@@ -264,11 +262,19 @@
             let sekcjaWyniku = `<span id="rA_${m.id}">${oficjalnyWynikA}</span><span>:</span><span id="rB_${m.id}">${oficjalnyWynikB}</span>`;
             if (adminMode) {
                 sekcjaWyniku = `
-                    <input type="number" min="0" id="rA_in_${m.id}" value="${oficjalnyWynikA === '-' ? '' : oficjalnyWynikA}" style="width:30px" onchange="saveOfficialScore(${m.id}, 'A')">
+                    <input type="number" min="0" id="rA_in_${m.id}" value="${oficjalnyWynikA === '-' ? '' : oficjalnyWynikA}" style="width:30px" onchange="saveLocalInput(${m.id}, 'rA')">
                     <span>:</span>
-                    <input type="number" min="0" id="rB_in_${m.id}" value="${oficjalnyWynikB === '-' ? '' : oficjalnyWynikB}" style="width:30px" onchange="saveOfficialScore(${m.id}, 'B')">
+                    <input type="number" min="0" id="rB_in_${m.id}" value="${oficjalnyWynikB === '-' ? '' : oficjalnyWynikB}" style="width:30px" onchange="saveLocalInput(${m.id}, 'rB')">
                 `;
             }
+
+            // Ładowanie wpisanych typów graczy ze słownika
+            let v1A = customTeamNames[`p1A_${m.id}`] || "";
+            let v1B = customTeamNames[`p1B_${m.id}`] || "";
+            let v2A = customTeamNames[`p2A_${m.id}`] || "";
+            let v2B = customTeamNames[`p2B_${m.id}`] || "";
+            let v3A = customTeamNames[`p3A_${m.id}`] || "";
+            let v3B = customTeamNames[`p3B_${m.id}`] || "";
 
             card.innerHTML = `
                 <div class="match-header">
@@ -286,24 +292,24 @@
                     <div class="typer-col">
                         <span class="typer-name">💃 Wiktoria</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p1A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p1A')"> :
-                            <input type="number" min="0" id="p1B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p1B')">
+                            <input type="number" min="0" id="p1A_${m.id}" value="${v1A}" onchange="saveLocalInput(${m.id}, 'p1A')"> :
+                            <input type="number" min="0" id="p1B_${m.id}" value="${v1B}" onchange="saveLocalInput(${m.id}, 'p1B')">
                         </div>
                         <span class="pts-badge" id="pts1_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">⚽ Janek</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p2A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p2A')"> :
-                            <input type="number" min="0" id="p2B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p2B')">
+                            <input type="number" min="0" id="p2A_${m.id}" value="${v2A}" onchange="saveLocalInput(${m.id}, 'p2A')"> :
+                            <input type="number" min="0" id="p2B_${m.id}" value="${v2B}" onchange="saveLocalInput(${m.id}, 'p2B')">
                         </div>
                         <span class="pts-badge" id="pts2_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">🔥 Miłosz</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p3A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p3A')"> :
-                            <input type="number" min="0" id="p3B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p3B')">
+                            <input type="number" min="0" id="p3A_${m.id}" value="${v3A}" onchange="saveLocalInput(${m.id}, 'p3A')"> :
+                            <input type="number" min="0" id="p3B_${m.id}" value="${v3B}" onchange="saveLocalInput(${m.id}, 'p3B')">
                         </div>
                         <span class="pts-badge" id="pts3_${m.id}">0 pkt</span>
                     </div>
@@ -312,39 +318,22 @@
             container.appendChild(card);
         });
         
-        insertLoadedDataToInputs();
-    }
-
-    function toggleAdminMode() {
-        adminMode = !adminMode;
-        buildMatches();
-    }
-
-    async function saveCustomTeamName(matchId, side) {
-        const val = document.getElementById(`name${side}_in_${matchId}`).value;
-        if(!supabaseClient) return;
-        await supabaseClient.from('typer_scores').upsert({ id: `name${side}_${matchId}`, value: val });
-        customTeamNames[`name${side}_${matchId}`] = val;
-    }
-
-    async function saveOfficialScore(matchId, side) {
-        const val = document.getElementById(`r${side}_in_${matchId}`).value;
-        if(!supabaseClient) return;
-        await supabaseClient.from('typer_scores').upsert({ id: `r${side}_${matchId}`, value: val });
-        customTeamNames[`r${side}_${matchId}`] = val;
         calculatePoints();
     }
 
-    function updateLocalCacheAndCalculate(matchId, key) {
-        const el = document.getElementById(`${key}_${matchId}`);
-        if(el) {
-            const cacheIndex = cloudLoadedData.findIndex(x => x.id === `${key}_${matchId}`);
-            if(cacheIndex > -1) {
-                cloudLoadedData[cacheIndex].value = el.value;
-            } else {
-                cloudLoadedData.push({ id: `${key}_${matchId}`, value: el.value });
-            }
+    // Bezpieczne zapisywanie każdej zmiany od razu do pamięci słownika (zapobiega resetowaniu pól przy filtrach)
+    function saveLocalInput(matchId, prefix) {
+        const elA = document.getElementById(`${prefix}A_in_${matchId}`) || document.getElementById(`${prefix}A_${matchId}`);
+        const elB = document.getElementById(`${prefix}B_in_${matchId}`) || document.getElementById(`${prefix}B_${matchId}`);
+        
+        if (prefix === 'nameA' || prefix === 'nameB') {
+            const inputEl = document.getElementById(`${prefix}_in_${matchId}`);
+            if(inputEl) customTeamNames[`${prefix}_${matchId}`] = inputEl.value;
+        } else {
+            if(elA) customTeamNames[`${prefix}_${matchId}`] = elA.value;
+            if(elB) customTeamNames[`${prefix}B_${matchId}`] = elB.value;
         }
+        
         calculatePoints();
     }
 
@@ -355,7 +344,7 @@
             });
             const data = await response.json();
             if(!data || !data.matches || data.matches.length === 0) {
-                alert("Połączenie poprawne. Brak rozpoczętych meczów w bazie FIFA.");
+                alert("Oficjalna baza FIFA nie ma jeszcze trwających meczów. Wyniki zaczną pobierać się automatycznie po pierwszym gwizdku na turnieju!");
                 return;
             }
             
@@ -368,27 +357,23 @@
                     const hScore = apiMatch.score.fullTime.home;
                     const aScore = apiMatch.score.fullTime.away;
                     
-                    customTeamNames[`rA_${m.id}`] = hScore;
-                    customTeamNames[`rB_${m.id}`] = aScore;
-                    
-                    await supabaseClient.from('typer_scores').upsert({ id: `rA_${m.id}`, value: String(hScore) });
-                    await supabaseClient.from('typer_scores').upsert({ id: `rB_${m.id}`, value: String(aScore) });
+                    customTeamNames[`rA_${m.id}`] = String(hScore);
+                    customTeamNames[`rB_${m.id}`] = String(aScore);
                     zaktualizowano = true;
                 }
             }
             
             buildMatches();
-            calculatePoints();
-            if(zaktualizowano) alert("Pomyślnie zaktualizowano zakończone mecze!");
-            else alert("Brak nowych zakończonych meczów.");
+            if(zaktualizowano) alert("Wyniki live pobrane pomyślnie! Kliknij teraz zielony przycisk 'ZAPISZ', aby zapisać je w chmurze.");
+            else alert("Brak nowych rozstrzygnięć meczów w oficjalnym systemie.");
         } catch (err) {
             console.error(err);
-            alert("Brak odpowiedzi serwera FIFA. Wyniki zostaną pobrane później.");
+            alert("Serwer FIFA jest przeciążony. Spróbuj pobrać wyniki live za chwilę.");
         }
     }
 
     function getPoints(pA, pB, rA, rB) {
-        if (pA === "" || pB === "" || rA === "" || rB === "" || rA === "-" || rB === "-") return 0;
+        if (pA === "" || pB === "" || rA === "" || rB === "" || rA === undefined || rB === undefined || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
         const realA = parseInt(rA), realB = parseInt(rB);
         if (predA === realA && predB === realB) return 3;
@@ -404,14 +389,15 @@
             let rB = customTeamNames[`rB_${m.id}`] || "-";
             
             for (let p = 1; p <= 3; p++) {
-                const rowA = cloudLoadedData.find(x => x.id === `p${p}A_${m.id}`);
-                const rowB = cloudLoadedData.find(x => x.id === `p${p}B_${m.id}`);
-                const pA = rowA ? rowA.value : "";
-                const pB = rowB ? rowB.value : "";
+                const pA = customTeamNames[`p${p}A_${m.id}`] || "";
+                const pB = customTeamNames[`p${p}B_${m.id}`] || "";
                 
                 const pts = getPoints(pA, pB, rA, rB);
                 const b = document.getElementById(`pts${p}_${m.id}`);
-                if(b) { b.innerText = `${pts} pkt`; b.className = `pts-badge pts-${pts}`; }
+                if(b) { 
+                    b.innerText = `${pts} pkt`; 
+                    b.className = `pts-badge pts-${pts}`; 
+                }
                 if(p===1) t1+=pts; if(p===2) t2+=pts; if(p===3) t3+=pts;
             }
         });
@@ -420,40 +406,34 @@
         document.getElementById('score-p3').innerText = t3;
     }
 
-    // NAJWAŻNIEJSZA POPRAWKA: Filtrowanie przed wysyłką zapobiega czyszczeniu ekranu i błędom bazy danych
+    // PANCERNY MECHANIZM: Wysyła tylko pełne wiersze i filtruje puste rekordy przed uderzeniem do Supabase
     async function saveDataToCloud() {
         if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
         
-        // Najpierw zbieramy to, co jest aktualnie widoczne na ekranie
-        matches.forEach(m => {
-            ['p1A','p1B','p2A','p2B','p3A','p3B'].forEach(k => {
-                const el = document.getElementById(`${k}_${m.id}`);
-                if(el && el.value !== "") {
-                    const cacheIndex = cloudLoadedData.findIndex(x => x.id === `${k}_${m.id}`);
-                    if(cacheIndex > -1) cloudLoadedData[cacheIndex].value = el.value;
-                    else cloudLoadedData.push({ id: `${k}_${m.id}`, value: el.value });
-                }
-            });
+        const rows = [];
+        Object.keys(customTeamNames).forEach(key => {
+            const val = customTeamNames[key];
+            // Odrzucamy puste ciągi i błędy przed wysłaniem
+            if (val !== undefined && val !== null && val !== "") {
+                rows.push({ id: key, value: String(val) });
+            }
         });
 
-        // KLUCZOWE: Wysyłamy wyłącznie rekordy, które mają przypisaną jakąkolwiek wartość (nie puste)
-        const daneDoWyslania = cloudLoadedData.filter(row => row.value !== undefined && row.value !== null && row.value !== "");
-
-        if(daneDoWyslania.length === 0) {
-            alert("Nie wpisano żadnych nowych typów do zapisania!");
+        if(rows.length === 0) {
+            alert("Nie wpisano żadnych wyników ani typów do wysłania.");
             return;
         }
 
         try {
-            const { error } = await supabaseClient.from('typer_scores').upsert(daneDoWyslania);
+            const { error } = await supabaseClient.from('typer_scores').upsert(rows);
             if(error) {
-                alert("Błąd bazy danych przy zapisie: " + error.message);
+                alert("Błąd zapisu Supabase: " + error.message);
             } else {
-                alert("🎯 Wszystkie wprowadzone typy zostały bezpiecznie zapisane!");
+                alert("🎯 Wszystkie Wasze typy i wyniki zostały trwale zsynchronizowane w chmurze!");
             }
         } catch(e) {
             console.error(e);
-            alert("Wystąpił błąd sieciowy, ale Wasze dane na ekranie są bezpieczne. Spróbuj kliknąć Zapisz ponownie.");
+            alert("Problem z siecią. Wasze dane są bezpieczne na ekranie, spróbuj kliknąć Zapisz ponownie.");
         }
     }
 
@@ -464,40 +444,27 @@
             if(error) { console.error(error); return; }
             if(!data) return;
             
-            cloudLoadedData = data; 
-
+            // Czyszczenie starego słownika i ładowanie świeżych rekordów z bazy danych
+            customTeamNames = {};
             data.forEach(row => {
-                if(row.id.startsWith('name') || row.id.startsWith('r')) {
-                    customTeamNames[row.id] = row.value;
-                }
+                customTeamNames[row.id] = row.value;
             });
             
             buildMatches();
-            calculatePoints();
         } catch(e) {
-            console.error("Błąd podczas pobierania danych: ", e);
+            console.error("Błąd ładowania chmury: ", e);
         }
-    }
-
-    function insertLoadedDataToInputs() {
-        cloudLoadedData.forEach(row => {
-            const elInput = document.getElementById(row.id);
-            if(elInput && elInput.tagName === "INPUT") {
-                elInput.value = row.value;
-            }
-        });
     }
 
     function switchPhase(phase) {
         currentPhase = phase;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-phase-${phase}`).classList.add('active');
         
         document.getElementById('group-filters').style.display = phase === 'grupowa' ? 'flex' : 'none';
         document.getElementById('date-filters').style.display = phase === 'timeline' ? 'flex' : 'none';
         
         buildMatches();
-        calculatePoints();
     }
 
     function filterGroup(group) {
@@ -505,7 +472,6 @@
         document.querySelectorAll('#group-filters .filter-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-group-${group}`).classList.add('active');
         buildMatches();
-        calculatePoints();
     }
 
     function filterDate(date) {
@@ -514,7 +480,6 @@
         const cssId = date.replace('.', '-');
         document.getElementById(`btn-date-${cssId}`).classList.add('active');
         buildMatches();
-        calculatePoints();
     }
 
     buildDateFilters();
