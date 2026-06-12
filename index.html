@@ -207,7 +207,6 @@
 
         { id: 97, phase: 'pucharowa', group: 'Ćwierćfinał', date: '09.07', teamA: 'Zwycięzca M89', teamB: 'Zwycięzca M90' },
         { id: 98, phase: 'pucharowa', group: 'Ćwierćfinał', date: '10.07', teamA: 'Zwycięzca M91', teamB: 'Zwycięzca M92' },
-        { id: 99, phase: 'pucharowa', group: 'Ćwierćfinał', date: '11.07', teamA: 'Zwycięzca M93', teamB: 'Zwycięzca M94' },
         { id: 100, phase: 'pucharowa', group: 'Ćwierćfinał', date: '11.07', teamA: 'Zwycięzca M95', teamB: 'Zwycięzca M96' },
 
         { id: 101, phase: 'pucharowa', group: 'Półfinał', date: '14.07', teamA: 'Zwycięzca M97', teamB: 'Zwycięzca M98' },
@@ -216,27 +215,6 @@
         { id: 103, phase: 'pucharowa', group: 'Mecz o 3. miejsce', date: '18.07', teamA: 'Przegrany M101', teamB: 'Przegrany M102' },
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
-
-    function toggleAdminMode() {
-        adminMode = !adminMode;
-        buildMatches();
-    }
-
-    function buildDateFilters() {
-        const dateContainer = document.getElementById('date-filters');
-        const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
-            const [dzienA, miesiacA] = a.split('.').map(Number);
-            const [dzienB, miesiacB] = b.split('.').map(Number);
-            return miesiacA === miesiacB ? dzienA - dzienB : miesiacA - miesiacB;
-        });
-        
-        let html = `<button class="filter-btn active" id="btn-date-ALL" onclick="filterDate('ALL')">Wszystkie Dni</button>`;
-        unikalneDaty.forEach(d => {
-            const cssId = d.replace('.', '-');
-            html += `<button class="filter-btn" id="btn-date-${cssId}" onclick="filterDate('${d}')">${d}</button>`;
-        });
-        dateContainer.innerHTML = html;
-    }
 
     function buildMatches() {
         const container = document.getElementById('matches-container');
@@ -323,19 +301,14 @@
             `;
             container.appendChild(card);
         });
-        
         calculatePoints();
     }
 
-    // POPRAWIONE: Bezpieczne pobieranie wartości z okienek bez błędów identyfikatorów
+    // BEZPIECZNA FUNKCJA: Łapie zmiany z pól tekstowych i od razu zapisuje je do pamięci słownika
     function saveLocalInput(matchId, prefix) {
-        let elA = document.getElementById(`${prefix}_in_${matchId}`) || document.getElementById(`${prefix}_${matchId}`);
-        let elB = document.getElementById(`${prefix.slice(0,-1)}B_in_${matchId}`) || document.getElementById(`${prefix.slice(0,-1)}B_${matchId}`);
-        
         if (prefix.startsWith('p')) {
-            // Bezpieczne pobranie dla okienek typów graczy p1A, p2A itd.
-            const userPrefix = prefix.slice(0, 3); // np. 'p1A' lub 'p2A'
-            const userPrefixB = userPrefix.slice(0, 2) + 'B'; // np. 'p1B' lub 'p2B'
+            const userPrefix = prefix.slice(0, 3); 
+            const userPrefixB = userPrefix.slice(0, 2) + 'B'; 
             const inputA = document.getElementById(`${userPrefix}_${matchId}`);
             const inputB = document.getElementById(`${userPrefixB}_${matchId}`);
             
@@ -361,7 +334,7 @@
             });
             const data = await response.json();
             if(!data || !data.matches || data.matches.length === 0) {
-                alert("Połączenie z bazą FIFA aktywne! Brak rozpoczętych meczów. Wyniki pobiorą się automatycznie po rozpoczęciu spotkań.");
+                alert("Połączenie z bazą FIFA aktywne! Brak rozpoczętych meczów.");
                 return;
             }
             
@@ -455,7 +428,7 @@
         try {
             const { error } = await supabaseClient.from('typer_scores').upsert(rows);
             if(error) alert("Błąd chmury Supabase: " + error.message);
-            else alert("🎯 Wasze typy i wyniki zostały trwale zapisane w chmurze!");
+            else alert("🎯 Wszystkie Wasze typy i wyniki zostały trwale zapisane w chmurze!");
         } catch (e) {
             console.error(e);
             alert("Błąd połączenia. Spróbuj zapisać typy ponownie.");
@@ -506,13 +479,14 @@
         buildMatches();
     }
 
+    // GWARANCJA STABILNOŚCI: Inicjalizacja klienta w bloku try-catch bez błędów składniowych
     window.addEventListener('DOMContentLoaded', () => {
         try {
             if (window.supabase && typeof window.supabase.createClient === 'function') {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         } catch (err) {
-            console.error("Błąd podczas inicjalizacji klienta Supabase:", err);
+            console.error("Błąd połączenia z Supabase:", err);
         }
         buildDateFilters();
         loadDataFromCloud();
