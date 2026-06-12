@@ -51,7 +51,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Gol drużyny = 1pkt</p>
+    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Różnica goli = 1pkt</p>
 
     <div class="admin-toggle">
         <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw i oficjalnych wyników meczów)</button>
@@ -217,11 +217,6 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
-    function toggleAdminMode() {
-        adminMode = !adminMode;
-        buildMatches();
-    }
-
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
@@ -352,7 +347,7 @@
             });
             const data = await response.json();
             if(!data || !data.matches || data.matches.length === 0) {
-                alert("Połączenie z bazą FIFA aktywne! Brak rozpoczętych meczów. Wyniki pobiorą się automatycznie po pierwszym gwizdku na boiskach.");
+                alert("Połączenie z bazą FIFA aktywne! Brak rozpoczętych meczów. Wyniki pobiorą się automatycznie po rozpoczęciu spotkań.");
                 return;
             }
             
@@ -385,13 +380,30 @@
         }
     }
 
+    // NOWA FORMULA MATEMATYCZNA: Zliczanie punktów na prostych zasadach: 3 za wynik, 2 za rozstrzygnięcie, 1 za różnicę bramkową
     function getPoints(pA, pB, rA, rB) {
         if (pA === "" || pB === "" || rA === "" || rB === "" || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
         const realA = parseInt(rA), realB = parseInt(rB);
+        
+        // 1. Dokładny wynik
         if (predA === realA && predB === realB) return 3;
-        if (Math.sign(predA - predB) === Math.sign(realA - realB)) return 2;
-        if (predA === realA || predB === realB) return 1;
+        
+        // 2. Trafione rozstrzygnięcie (kto wygrał lub remis)
+        const signPred = Math.sign(predA - predB);
+        const signReal = Math.sign(realA - realB);
+        
+        if (signPred === signReal) {
+            // Jeśli był remis, dajemy z automatu 2 punkty za trafienie remisu
+            if (signReal === 0) return 2;
+            
+            // Jeśli to nie był remis, ale różnica goli się zgadza (np. typ 2:0, wynik 3:1) -> wpada 1 pkt
+            if ((predA - predB) === (realA - realB)) return 1;
+            
+            // W przeciwnym razie wpada standardowe 2 pkt za samo wskazanie zwycięzcy
+            return 2;
+        }
+        
         return 0;
     }
 
@@ -438,7 +450,7 @@
         try {
             const { error } = await supabaseClient.from('typer_scores').upsert(rows);
             if(error) alert("Błąd chmury Supabase: " + error.message);
-            else alert("🎯 Wasze typy i wyniki zostały trwale zapisane w chmurze!");
+            else alert("🎯 Wszystkie Wasze typy i wyniki zostały trwale zapisane w chmurze!");
         } catch (e) {
             console.error(e);
             alert("Błąd połączenia. Spróbuj zapisać typy ponownie.");
@@ -489,11 +501,10 @@
         buildMatches();
     }
 
-    // ROZWIĄZANIE: Inicjalizacja połączenia następuje tutaj za pomocą window.supabase.createClient
     window.addEventListener('DOMContentLoaded', () => {
         try {
             if (window.supabase && typeof window.supabase.createClient === 'function') {
-                supabaseClient = window.supabase.createClient(SUPUPBASE_URL = SUPABASE_URL, SUPABASE_KEY);
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         } catch (err) {
             console.error("Błąd podczas inicjalizacji klienta Supabase:", err);
