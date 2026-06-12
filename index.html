@@ -51,7 +51,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Gol drużyny = 1pkt</p>
+    <p class="subtitle">Wiktoria, Janek i Miłosz — Stabilny zapis bez utraty danych</p>
 
     <div class="admin-toggle">
         <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw i oficjalnych wyników meczów)</button>
@@ -93,7 +93,7 @@
     let currentDateFilter = 'ALL';
     let adminMode = false;
     let customTeamNames = {};
-    let cloudLoadedData = []; // Globalna pamięć podręczna na dane z chmury
+    let cloudLoadedData = []; 
 
     const matches = [
         // KOLEJKA 1
@@ -213,7 +213,7 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
-    // INICJALIZACJA: Bezpieczne, poprawne wywołanie oficjalnego pakietu Supabase z dużej litery
+    // APTEKARSKA DOKŁADNOŚĆ: Duża litera w nazwie Supabase zapobiega błędom krytycznym skryptu
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function buildDateFilters() {
@@ -312,7 +312,6 @@
             container.appendChild(card);
         });
         
-        // Po narysowaniu kart, uzupełniamy pola z pamięci podręcznej chmury
         insertLoadedDataToInputs();
     }
 
@@ -339,10 +338,12 @@
     function updateLocalCacheAndCalculate(matchId, key) {
         const el = document.getElementById(`${key}_${matchId}`);
         if(el) {
-            // Natychmiast zapisujemy do pamięci podręcznej, by nie zniknęło przy przełączaniu filtrów
             const cacheIndex = cloudLoadedData.findIndex(x => x.id === `${key}_${matchId}`);
-            if(cacheIndex > -1) cloudLoadedData[cacheIndex].value = el.value;
-            else cloudLoadedData.push({ id: `${key}_${matchId}`, value: el.value });
+            if(cacheIndex > -1) {
+                cloudLoadedData[cacheIndex].value = el.value;
+            } else {
+                cloudLoadedData.push({ id: `${key}_${matchId}`, value: el.value });
+            }
         }
         calculatePoints();
     }
@@ -354,7 +355,7 @@
             });
             const data = await response.json();
             if(!data || !data.matches || data.matches.length === 0) {
-                alert("Oficjalna baza FIFA nie ma jeszcze trwających meczów. Wyniki pobiorą się same, gdy turniej ruszy!");
+                alert("Połączenie poprawne. Brak rozpoczętych meczów w bazie FIFA.");
                 return;
             }
             
@@ -378,11 +379,11 @@
             
             buildMatches();
             calculatePoints();
-            if(zaktualizowano) alert("Wyniki zostały pomyślnie zaktualizowane z bazy FIFA!");
-            else alert("Połączenie z FIFA poprawne. Brak nowych zakończonych meczów.");
+            if(zaktualizowano) alert("Pomyślnie zaktualizowano zakończone mecze!");
+            else alert("Brak nowych zakończonych meczów.");
         } catch (err) {
             console.error(err);
-            alert("Brak odpowiedzi od serwera FIFA. Spróbuj za chwilę.");
+            alert("Brak odpowiedzi serwera FIFA. Wyniki zostaną pobrane później.");
         }
     }
 
@@ -403,7 +404,6 @@
             let rB = customTeamNames[`rB_${m.id}`] || "-";
             
             for (let p = 1; p <= 3; p++) {
-                // Pobieramy wartości z globalnej pamięci podręcznej, niezależnie od tego czy są aktualnie narysowane
                 const rowA = cloudLoadedData.find(x => x.id === `p${p}A_${m.id}`);
                 const rowB = cloudLoadedData.find(x => x.id === `p${p}B_${m.id}`);
                 const pA = rowA ? rowA.value : "";
@@ -420,10 +420,11 @@
         document.getElementById('score-p3').innerText = t3;
     }
 
+    // NAJWAŻNIEJSZA POPRAWKA: Filtrowanie przed wysyłką zapobiega czyszczeniu ekranu i błędom bazy danych
     async function saveDataToCloud() {
         if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
         
-        // Zbieramy dane z widocznych na ekranie pól, na wypadek gdyby użytkownik coś zmienił
+        // Najpierw zbieramy to, co jest aktualnie widoczne na ekranie
         matches.forEach(m => {
             ['p1A','p1B','p2A','p2B','p3A','p3B'].forEach(k => {
                 const el = document.getElementById(`${k}_${m.id}`);
@@ -435,30 +436,49 @@
             });
         });
 
-        const { error } = await supabaseClient.from('typer_scores').upsert(cloudLoadedData);
-        if(error) alert("Błąd zapisu danych: " + error.message);
-        else alert("🎯 Wasze typy zostały pomyślnie i bezpiecznie zapisane w chmurze!");
+        // KLUCZOWE: Wysyłamy wyłącznie rekordy, które mają przypisaną jakąkolwiek wartość (nie puste)
+        const daneDoWyslania = cloudLoadedData.filter(row => row.value !== undefined && row.value !== null && row.value !== "");
+
+        if(daneDoWyslania.length === 0) {
+            alert("Nie wpisano żadnych nowych typów do zapisania!");
+            return;
+        }
+
+        try {
+            const { error } = await supabaseClient.from('typer_scores').upsert(daneDoWyslania);
+            if(error) {
+                alert("Błąd bazy danych przy zapisie: " + error.message);
+            } else {
+                alert("🎯 Wszystkie wprowadzone typy zostały bezpiecznie zapisane!");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Wystąpił błąd sieciowy, ale Wasze dane na ekranie są bezpieczne. Spróbuj kliknąć Zapisz ponownie.");
+        }
     }
 
     async function loadDataFromCloud() {
         if(!supabaseClient) return;
-        const { data, error } = await supabaseClient.from('typer_scores').select('*');
-        if(error) { console.error(error); return; }
-        if(!data) return;
-        
-        cloudLoadedData = data; // Zapisujemy wszystko do globalnego schowka
+        try {
+            const { data, error } = await supabaseClient.from('typer_scores').select('*');
+            if(error) { console.error(error); return; }
+            if(!data) return;
+            
+            cloudLoadedData = data; 
 
-        data.forEach(row => {
-            if(row.id.startsWith('name') || row.id.startsWith('r')) {
-                customTeamNames[row.id] = row.value;
-            }
-        });
-        
-        buildMatches();
-        calculatePoints();
+            data.forEach(row => {
+                if(row.id.startsWith('name') || row.id.startsWith('r')) {
+                    customTeamNames[row.id] = row.value;
+                }
+            });
+            
+            buildMatches();
+            calculatePoints();
+        } catch(e) {
+            console.error("Błąd podczas pobierania danych: ", e);
+        }
     }
 
-    // FIX: Bezpieczne wpisywanie danych tylko do tych okienek, które są aktualnie widoczne
     function insertLoadedDataToInputs() {
         cloudLoadedData.forEach(row => {
             const elInput = document.getElementById(row.id);
