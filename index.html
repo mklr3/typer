@@ -51,7 +51,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Wiktoria, Janek i Miłosz — Pełna automatyzacja i stabilne zapisywanie</p>
+    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Gol drużyny = 1pkt</p>
 
     <div class="admin-toggle">
         <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Modyfikacja nazw i oficjalnych wyników meczów)</button>
@@ -93,6 +93,7 @@
     let currentDateFilter = 'ALL';
     let adminMode = false;
     let customTeamNames = {};
+    let cloudLoadedData = []; // Globalna pamięć podręczna na dane z chmury
 
     const matches = [
         // KOLEJKA 1
@@ -212,7 +213,7 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
-    // KLUCZOWA POPRAWKA: Prawidłowe wywołanie oficjalnej biblioteki przez duże 'S'
+    // INICJALIZACJA: Bezpieczne, poprawne wywołanie oficjalnego pakietu Supabase z dużej litery
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function buildDateFilters() {
@@ -285,24 +286,24 @@
                     <div class="typer-col">
                         <span class="typer-name">💃 Wiktoria</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p1A_${m.id}" onchange="calculatePoints()"> :
-                            <input type="number" min="0" id="p1B_${m.id}" onchange="calculatePoints()">
+                            <input type="number" min="0" id="p1A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p1A')"> :
+                            <input type="number" min="0" id="p1B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p1B')">
                         </div>
                         <span class="pts-badge" id="pts1_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">⚽ Janek</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p2A_${m.id}" onchange="calculatePoints()"> :
-                            <input type="number" min="0" id="p2B_${m.id}" onchange="calculatePoints()">
+                            <input type="number" min="0" id="p2A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p2A')"> :
+                            <input type="number" min="0" id="p2B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p2B')">
                         </div>
                         <span class="pts-badge" id="pts2_${m.id}">0 pkt</span>
                     </div>
                     <div class="typer-col">
                         <span class="typer-name">🔥 Miłosz</span>
                         <div class="typer-inputs">
-                            <input type="number" min="0" id="p3A_${m.id}" onchange="calculatePoints()"> :
-                            <input type="number" min="0" id="p3B_${m.id}" onchange="calculatePoints()">
+                            <input type="number" min="0" id="p3A_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p3A')"> :
+                            <input type="number" min="0" id="p3B_${m.id}" onchange="updateLocalCacheAndCalculate(${m.id}, 'p3B')">
                         </div>
                         <span class="pts-badge" id="pts3_${m.id}">0 pkt</span>
                     </div>
@@ -310,12 +311,14 @@
             `;
             container.appendChild(card);
         });
+        
+        // Po narysowaniu kart, uzupełniamy pola z pamięci podręcznej chmury
+        insertLoadedDataToInputs();
     }
 
     function toggleAdminMode() {
         adminMode = !adminMode;
         buildMatches();
-        loadDataFromCloud();
     }
 
     async function saveCustomTeamName(matchId, side) {
@@ -333,7 +336,17 @@
         calculatePoints();
     }
 
-    // BEZPIECZNE POBIERANIE: Nie sypie błędami, gdy mecze się jeszcze nie zaczęły
+    function updateLocalCacheAndCalculate(matchId, key) {
+        const el = document.getElementById(`${key}_${matchId}`);
+        if(el) {
+            // Natychmiast zapisujemy do pamięci podręcznej, by nie zniknęło przy przełączaniu filtrów
+            const cacheIndex = cloudLoadedData.findIndex(x => x.id === `${key}_${matchId}`);
+            if(cacheIndex > -1) cloudLoadedData[cacheIndex].value = el.value;
+            else cloudLoadedData.push({ id: `${key}_${matchId}`, value: el.value });
+        }
+        calculatePoints();
+    }
+
     async function fetchLiveResults() {
         try {
             const response = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
@@ -341,12 +354,12 @@
             });
             const data = await response.json();
             if(!data || !data.matches || data.matches.length === 0) {
-                alert("Oficjalna baza FIFA nie ma jeszcze rozpoczętych meczów. Wyniki uzupełnią się automatycznie po pierwszym gwizdku!");
+                alert("Oficjalna baza FIFA nie ma jeszcze trwających meczów. Wyniki pobiorą się same, gdy turniej ruszy!");
                 return;
             }
             
             let zaktualizowano = false;
-            matches.forEach(m => {
+            for (const m of matches) {
                 const nazwaA = (customTeamNames[`nameA_${m.id}`] || m.teamA).split('/')[0].toLowerCase();
                 const apiMatch = data.matches.find(x => x.homeTeam.name && x.homeTeam.name.toLowerCase().includes(nazwaA));
                 
@@ -357,22 +370,19 @@
                     customTeamNames[`rA_${m.id}`] = hScore;
                     customTeamNames[`rB_${m.id}`] = aScore;
                     
-                    supabaseClient.from('typer_scores').upsert({ id: `rA_${m.id}`, value: String(hScore) });
-                    supabaseClient.from('typer_scores').upsert({ id: `rB_${m.id}`, value: String(aScore) });
+                    await supabaseClient.from('typer_scores').upsert({ id: `rA_${m.id}`, value: String(hScore) });
+                    await supabaseClient.from('typer_scores').upsert({ id: `rB_${m.id}`, value: String(aScore) });
                     zaktualizowano = true;
                 }
-            });
+            }
             
             buildMatches();
             calculatePoints();
-            if(zaktualizowano) {
-                alert("Zakończone mecze zostały pomyślnie zaktualizowane z bazy FIFA!");
-            } else {
-                alert("Baza live podłączona prawidłowo! Obecnie brak nowych zakończonych spotkań.");
-            }
+            if(zaktualizowano) alert("Wyniki zostały pomyślnie zaktualizowane z bazy FIFA!");
+            else alert("Połączenie z FIFA poprawne. Brak nowych zakończonych meczów.");
         } catch (err) {
             console.error(err);
-            alert("Serwer FIFA nie odpowiedział na czas. Wyniki zostaną pobrane przy kolejnej próbie.");
+            alert("Brak odpowiedzi od serwera FIFA. Spróbuj za chwilę.");
         }
     }
 
@@ -393,10 +403,11 @@
             let rB = customTeamNames[`rB_${m.id}`] || "-";
             
             for (let p = 1; p <= 3; p++) {
-                const elPA = document.getElementById(`p${p}A_${m.id}`);
-                const elPB = document.getElementById(`p${p}B_${m.id}`);
-                const pA = elPA ? elPA.value : "";
-                const pB = elPB ? elPB.value : "";
+                // Pobieramy wartości z globalnej pamięci podręcznej, niezależnie od tego czy są aktualnie narysowane
+                const rowA = cloudLoadedData.find(x => x.id === `p${p}A_${m.id}`);
+                const rowB = cloudLoadedData.find(x => x.id === `p${p}B_${m.id}`);
+                const pA = rowA ? rowA.value : "";
+                const pB = rowB ? rowB.value : "";
                 
                 const pts = getPoints(pA, pB, rA, rB);
                 const b = document.getElementById(`pts${p}_${m.id}`);
@@ -410,18 +421,23 @@
     }
 
     async function saveDataToCloud() {
-        if(!supabaseClient) { alert("Brak połączenia z bazą danych!"); return; }
-        const rows = [];
+        if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
+        
+        // Zbieramy dane z widocznych na ekranie pól, na wypadek gdyby użytkownik coś zmienił
         matches.forEach(m => {
             ['p1A','p1B','p2A','p2B','p3A','p3B'].forEach(k => {
                 const el = document.getElementById(`${k}_${m.id}`);
-                const val = el ? el.value : "";
-                if(val !== "") rows.push({ id: `${k}_${m.id}`, value: val });
+                if(el && el.value !== "") {
+                    const cacheIndex = cloudLoadedData.findIndex(x => x.id === `${k}_${m.id}`);
+                    if(cacheIndex > -1) cloudLoadedData[cacheIndex].value = el.value;
+                    else cloudLoadedData.push({ id: `${k}_${m.id}`, value: el.value });
+                }
             });
         });
-        const { error } = await supabaseClient.from('typer_scores').upsert(rows);
+
+        const { error } = await supabaseClient.from('typer_scores').upsert(cloudLoadedData);
         if(error) alert("Błąd zapisu danych: " + error.message);
-        else alert("🎯 Wasze typy zostały bezpiecznie zapisane w chmurze!");
+        else alert("🎯 Wasze typy zostały pomyślnie i bezpiecznie zapisane w chmurze!");
     }
 
     async function loadDataFromCloud() {
@@ -430,6 +446,8 @@
         if(error) { console.error(error); return; }
         if(!data) return;
         
+        cloudLoadedData = data; // Zapisujemy wszystko do globalnego schowka
+
         data.forEach(row => {
             if(row.id.startsWith('name') || row.id.startsWith('r')) {
                 customTeamNames[row.id] = row.value;
@@ -437,12 +455,17 @@
         });
         
         buildMatches();
-
-        data.forEach(row => {
-            const elInput = document.getElementById(row.id);
-            if(elInput && elInput.tagName === "INPUT") elInput.value = row.value;
-        });
         calculatePoints();
+    }
+
+    // FIX: Bezpieczne wpisywanie danych tylko do tych okienek, które są aktualnie widoczne
+    function insertLoadedDataToInputs() {
+        cloudLoadedData.forEach(row => {
+            const elInput = document.getElementById(row.id);
+            if(elInput && elInput.tagName === "INPUT") {
+                elInput.value = row.value;
+            }
+        });
     }
 
     function switchPhase(phase) {
@@ -454,7 +477,7 @@
         document.getElementById('date-filters').style.display = phase === 'timeline' ? 'flex' : 'none';
         
         buildMatches();
-        loadDataFromCloud();
+        calculatePoints();
     }
 
     function filterGroup(group) {
@@ -462,7 +485,7 @@
         document.querySelectorAll('#group-filters .filter-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-group-${group}`).classList.add('active');
         buildMatches();
-        loadDataFromCloud();
+        calculatePoints();
     }
 
     function filterDate(date) {
@@ -471,11 +494,10 @@
         const cssId = date.replace('.', '-');
         document.getElementById(`btn-date-${cssId}`).classList.add('active');
         buildMatches();
-        loadDataFromCloud();
+        calculatePoints();
     }
 
     buildDateFilters();
-    buildMatches();
     loadDataFromCloud();
 </script>
 </body>
