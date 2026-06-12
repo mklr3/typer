@@ -17,7 +17,7 @@
         .nav-tabs, .filter-tabs { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 15px; }
         .tab-btn { padding: 8px 16px; background: #e9ecef; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: white; }
-        .filter-btn { padding: 5px 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .filter-btn { padding: 5px 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin: 2px; }
         .filter-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
         .match-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 12px; border-left: 5px solid #dee2e6; }
         .match-card.pucharowa { border-left-color: var(--warning); }
@@ -83,7 +83,7 @@
 <script>
     let currentPhase = 'grupowa';
     let currentGroupFilter = 'ALL';
-    let adminMode = false; // DODANE: Zmienna do sterowania trybem Admina
+    let adminMode = false; // DODANE: Status trybu admina
 
     const matches = [
         // KOLEJKA 1
@@ -98,4 +98,163 @@
         { id: 9, phase: 'grupowa', group: 'E', date: '14.06', teamA: 'Niemcy', teamB: 'Curaçao' },
         { id: 10, phase: 'grupowa', group: 'E', date: '15.06', teamA: 'WKS', teamB: 'Ekwador' },
         { id: 11, phase: 'grupowa', group: 'F', date: '14.06', teamA: 'Holandia', teamB: 'Japonia' },
-        { id: 12, phase: 'grupowa', group: 'F', date
+        { id: 12, phase: 'grupowa', group: 'F', date: '15.06', teamA: 'Szwecja', teamB: 'Tunezja' },
+        { id: 13, phase: 'grupowa', group: 'G', date: '15.06', teamA: 'Belgia', teamB: 'Egipt' },
+        { id: 14, phase: 'grupowa', group: 'G', date: '16.06', teamA: 'Iran', teamB: 'Nowa Zelandia' },
+        { id: 15, phase: 'grupowa', group: 'H', date: '15.06', teamA: 'Hiszpania', teamB: 'Zambia/Baraż' },
+        { id: 16, phase: 'grupowa', group: 'H', date: '16.06', teamA: 'Arabia Saud.', teamB: 'Urugwaj' },
+        { id: 17, phase: 'grupowa', group: 'I', date: '16.06', teamA: 'Francja', teamB: 'Senegal' },
+        { id: 18, phase: 'grupowa', group: 'I', date: '17.06', teamA: 'Irak', teamB: 'Norwegia' },
+        { id: 19, phase: 'grupowa', group: 'J', date: '16.06', teamA: 'Austria', teamB: 'Jordania' },
+        { id: 20, phase: 'grupowa', group: 'J', date: '17.06', teamA: 'Argentyna', teamB: 'Algieria' },
+        { id: 21, phase: 'grupowa', group: 'K', date: '17.06', teamA: 'Portugalia', teamB: 'DR Konga' },
+        { id: 22, phase: 'grupowa', group: 'K', date: '18.06', teamA: 'Ghana', teamB: 'Panama' },
+        { id: 23, phase: 'grupowa', group: 'L', date: '17.06', teamA: 'Anglia', teamB: 'Chorwacja' },
+        { id: 24, phase: 'grupowa', group: 'L', date: '18.06', teamA: 'Uzbekistan', teamB: 'Kolumbia' },
+
+        // KOLEJKA 2
+        { id: 25, phase: 'grupowa', group: 'A', date: '18.06', teamA: 'Czechy', teamB: 'RPA' },
+        { id: 26, phase: 'grupowa', group: 'A', date: '19.06', teamA: 'Meksyk', teamB: 'Korea Płd.' },
+        { id: 27, phase: 'grupowa', group: 'B', date: '18.06', teamA: 'Szwajcaria', teamB: 'Bośnia i Herc.' },
+        { id: 28, phase: 'grupowa', group: 'B', date: '19.06', teamA: 'Kanada', teamB: 'Katar' },
+        { id: 29, phase: 'grupowa', group: 'C', date: '20.06', teamA: 'Szkocja', teamB: 'Maroko' },
+        { id: 30, phase: 'grupowa', group: 'C', date: '20.06', teamA: 'Brazylia', teamB: 'Haiti' },
+        { id: 31, phase: 'grupowa', group: 'D', date: '19.06', teamA: 'USA', teamB: 'Australia' },
+        { id: 32, phase: 'grupowa', group: 'D', date: '20.06', teamA: 'Turcja', teamB: 'Paragwaj' },
+        { id: 33, phase: 'grupowa', group: 'E', date: '20.06', teamA: 'Niemcy', teamB: 'WKS' },
+        { id: 34, phase: 'grupowa', group: 'E', date: '21.06', teamA: 'Ekwador', teamB: 'Curaçao' },
+        { id: 35, phase: 'grupowa', group: 'F', date: '20.06', teamA: 'Holandia', teamB: 'Szwecja' },
+        { id: 36, phase: 'grupowa', group: 'F', date: '21.06', teamA: 'Tunezja', teamB: 'Japonia' },
+        { id: 37, phase: 'grupowa', group: 'G', date: '21.06', teamA: 'Belgia', teamB: 'Iran' },
+        { id: 38, phase: 'grupowa', group: 'G', date: '22.06', teamA: 'Nowa Zelandia', teamB: 'Egipt' },
+        { id: 39, phase: 'grupowa', group: 'H', date: '21.06', teamA: 'Hiszpania', teamB: 'Arabia Saud.' },
+        { id: 40, phase: 'grupowa', group: 'H', date: '22.06', teamA: 'Urugwaj', teamB: 'Zambia/Baraż' },
+        { id: 41, phase: 'grupowa', group: 'I', date: '22.06', teamA: 'Francja', teamB: 'Irak' },
+        { id: 42, phase: 'grupowa', group: 'I', date: '22.06', teamA: 'Norwegia', teamB: 'Senegal' },
+        { id: 43, phase: 'grupowa', group: 'J', date: '22.06', teamA: 'Austria', teamB: 'Argentyna' },
+        { id: 44, phase: 'grupowa', group: 'J', date: '23.06', teamA: 'Algieria', teamB: 'Jordania' },
+        { id: 45, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Portugalia', teamB: 'Ghana' },
+        { id: 46, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Panama', teamB: 'DR Konga' },
+        { id: 47, phase: 'grupowa', group: 'L', date: '23.06', teamA: 'Anglia', teamB: 'Uzbekistan' },
+        { id: 48, phase: 'grupowa', group: 'L', date: '24.06', teamA: 'Kolumbia', teamB: 'Chorwacja' },
+
+        // KOLEJKA 3
+        { id: 49, phase: 'grupowa', group: 'A', date: '24.06', teamA: 'RPA', teamB: 'Korea Płd.' },
+        { id: 50, phase: 'grupowa', group: 'A', date: '24.06', teamA: 'Czechy', teamB: 'Meksyk' },
+        { id: 51, phase: 'grupowa', group: 'B', date: '24.06', teamA: 'Bośnia i Herc.', teamB: 'Katar' },
+        { id: 52, phase: 'grupowa', group: 'B', date: '24.06', teamA: 'Szwajcaria', teamB: 'Kanada' },
+        { id: 53, phase: 'grupowa', group: 'C', date: '25.06', teamA: 'Maroko', teamB: 'Brazylia' },
+        { id: 54, phase: 'grupowa', group: 'C', date: '25.06', teamA: 'Szkocja', teamB: 'Haiti' },
+        { id: 55, phase: 'grupowa', group: 'D', date: '25.06', teamA: 'Paragwaj', teamB: 'Australia' },
+        { id: 56, phase: 'grupowa', group: 'D', date: '25.06', teamA: 'Turcja', teamB: 'USA' },
+        { id: 57, phase: 'grupowa', group: 'E', date: '26.06', teamA: 'Curaçao', teamB: 'WKS' },
+        { id: 58, phase: 'grupowa', group: 'E', date: '26.06', teamA: 'Ekwador', teamB: 'Niemcy' },
+        { id: 59, phase: 'grupowa', group: 'F', date: '26.06', teamA: 'Japonia', teamB: 'Szwecja' },
+        { id: 60, phase: 'grupowa', group: 'F', date: '26.06', teamA: 'Tunezja', teamB: 'Holandia' },
+        { id: 61, phase: 'grupowa', group: 'G', date: '27.06', teamA: 'Egipt', teamB: 'Iran' },
+        { id: 62, phase: 'grupowa', group: 'G', date: '27.06', teamA: 'Nowa Zelandia', teamB: 'Belgia' },
+        { id: 63, phase: 'grupowa', group: 'H', date: '27.06', teamA: 'Zambia/Baraż', teamB: 'Arabia Saud.' },
+        { id: 64, phase: 'grupowa', group: 'H', date: '27.06', teamA: 'Urugwaj', teamB: 'Hiszpania' },
+        { id: 65, phase: 'grupowa', group: 'I', date: '27.06', teamA: 'Senegal', teamB: 'Irak' },
+        { id: 66, phase: 'grupowa', group: 'I', date: '27.06', teamA: 'Norwegia', teamB: 'Francja' },
+        { id: 67, phase: 'grupowa', group: 'J', date: '27.06', teamA: 'Jordania', teamB: 'Argentyna' },
+        { id: 68, phase: 'grupowa', group: 'J', date: '27.06', teamA: 'Algieria', teamB: 'Austria' },
+        { id: 69, phase: 'grupowa', group: 'K', date: '27.06', teamA: 'DR Konga', teamB: 'Ghana' },
+        { id: 70, phase: 'grupowa', group: 'K', date: '27.06', teamA: 'Panama', teamB: 'Portugalia' },
+        { id: 71, phase: 'grupowa', group: 'L', date: '27.06', teamA: 'Chorwacja', teamB: 'Uzbekistan' },
+        { id: 72, phase: 'grupowa', group: 'L', date: '27.06', teamA: 'Kolumbia', teamB: 'Anglia' },
+
+        // DRABINKA PUCHAROWA
+        { id: 73, phase: 'pucharowa', group: 'P', date: '28.06 (1/16)', teamA: '1A', teamB: '3 C/E/F/H/I' },
+        { id: 74, phase: 'pucharowa', group: 'P', date: '28.06 (1/16)', teamA: '1E', teamB: '3 A/B/C/D/F' },
+        { id: 75, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: '1I', teamB: '3 C/D/E/J/K' },
+        { id: 76, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: '2K', teamB: '2L' },
+        { id: 77, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: '1C', teamB: '3 A/B/F/G/I' },
+        { id: 78, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: '2A', teamB: '2B' },
+        { id: 79, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: '1G', teamB: '3 A/E/H/I/J' },
+        { id: 80, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: '2E', teamB: '2F' },
+        { id: 81, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: '1B', teamB: '3 E/F/G/I/J' },
+        { id: 82, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: '2D', teamB: '2G' },
+        { id: 83, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1K', teamB: '2H' },
+        { id: 84, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1L', teamB: '3 E/H/I/J/K' },
+        { id: 85, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1D', teamB: '3 B/E/F/I/J' },
+        { id: 86, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '2C', teamB: '2F' },
+        { id: 87, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1H', teamB: '2J' },
+        { id: 88, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1J', teamB: '2I' },
+        
+        { id: 89, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M73', teamB: 'Zwycięzca M74' },
+        { id: 90, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M75', teamB: 'Zwycięzca M76' },
+        { id: 91, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M77', teamB: 'Zwycięzca M78' },
+        { id: 92, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M79', teamB: 'Zwycięzca M80' },
+        { id: 93, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M81', teamB: 'Zwycięzca M82' },
+        { id: 94, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M83', teamB: 'Zwycięzca M84' },
+        { id: 95, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M85', teamB: 'Zwycięzca M86' },
+        { id: 96, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M87', teamB: 'Zwycięzca M88' },
+
+        { id: 97, phase: 'pucharowa', group: 'P', date: '09.07 (1/4)', teamA: 'Zwycięzca M89', teamB: 'Zwycięzca M90' },
+        { id: 98, phase: 'pucharowa', group: 'P', date: '10.07 (1/4)', teamA: 'Zwycięzca M91', teamB: 'Zwycięzca M92' },
+        { id: 99, phase: 'pucharowa', group: 'P', date: '11.07 (1/4)', teamA: 'Zwycięzca M93', teamB: 'Zwycięzca M94' },
+        { id: 100, phase: 'pucharowa', group: 'P', date: '11.07 (1/4)', teamA: 'Zwycięzca M95', teamB: 'Zwycięzca M96' },
+
+        { id: 101, phase: 'pucharowa', group: 'P', date: '14.07 (1/2)', teamA: 'Zwycięzca M97', teamB: 'Zwycięzca M98' },
+        { id: 102, phase: 'pucharowa', group: 'P', date: '15.07 (1/2)', teamA: 'Zwycięzca M99', teamB: 'Zwycięzca M100' },
+
+        { id: 103, phase: 'pucharowa', group: 'P', date: '18.07 (3 MIEJSCE)', teamA: 'Przegrany M101', teamB: 'Przegrany M102' },
+        { id: 104, phase: 'pucharowa', group: 'P', date: '19.07 (FINAŁ)', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
+    ];
+
+    const SUPABASE_URL = "https://vmewefwvqxjyrqdnxntd.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtZXdlZnd2cXhqeXJxZG54bnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTE2MTUsImV4cCI6MjA5NjY4NzYxNX0.qqwQowaI7JEcMpHSWTKFXL5kPcyiBWKLqeGvriUBMVA";
+    const FOOTBALL_API_TOKEN = "c022840d3dee415784ddc5de74a16f44";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // DODANE: Funkcja do przełączania trybu i resetowania widoku
+    function toggleAdminMode() {
+        adminMode = !adminMode;
+        buildMatches();
+        loadDataFromCloud();
+    }
+
+    function buildMatches() {
+        const container = document.getElementById('matches-container');
+        container.innerHTML = '';
+
+        matches.forEach(m => {
+            if (m.phase !== currentPhase) return;
+            if (currentPhase === 'grupowa' && currentGroupFilter !== 'ALL' && m.group !== currentGroupFilter) return;
+
+            const card = document.createElement('div');
+            card.className = `match-card ${m.phase === 'pucharowa' ? 'pucharowa' : ''}`;
+            
+            // DODANE: Zmiana wyświetlania nazw zespołów na interaktywne w trybie Admina
+            let teamASection = `<span id="nameA_${m.id}">${m.teamA}</span>`;
+            let teamBSection = `<span id="nameB_${m.id}">${m.teamB}</span>`;
+            
+            // DODANE: Zmiana wyniku głównego na pola Input w trybie Admina
+            let sekcjaWyniku = `
+                <span id="rA_${m.id}">-</span>
+                <span>:</span>
+                <span id="rB_${m.id}">-</span>
+            `;
+
+            if (adminMode) {
+                teamASection = `<input type="text" id="nameA_${m.id}" onchange="saveScoreToCloud('nameA_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
+                teamBSection = `<input type="text" id="nameB_${m.id}" onchange="saveScoreToCloud('nameB_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
+                
+                sekcjaWyniku = `
+                    <input type="number" min="0" id="rA_${m.id}" onchange="saveScoreToCloud('rA_${m.id}', this.value); calculatePoints()" style="width:35px; border-color:var(--warning);">
+                    <span>:</span>
+                    <input type="number" min="0" id="rB_${m.id}" onchange="saveScoreToCloud('rB_${m.id}', this.value); calculatePoints()" style="width:35px; border-color:var(--warning);">
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="match-header">
+                    <span>${m.phase === 'grupowa' ? 'GRUPA ' + m.group : 'FAZA PUCHAROWA'} (Mecz #${m.id})</span>
+                    <span>📅 ${m.date}</span>
+                </div>
+                <div class="match-main">
+                    <div class="team-name team-left">${teamASection}</div>
+                    <div class="score-inputs">
+                        ${sek
