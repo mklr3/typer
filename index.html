@@ -217,6 +217,11 @@
         { id: 104, phase: 'pucharowa', group: 'Finał', date: '19.07', teamA: 'Zwycięzca M101', teamB: 'Zwycięzca M102' }
     ];
 
+    function toggleAdminMode() {
+        adminMode = !adminMode;
+        buildMatches();
+    }
+
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         const unikalneDaty = [...new Set(matches.map(m => m.date))].sort((a, b) => {
@@ -240,7 +245,6 @@
         matches.forEach(m => {
             if (currentPhase === 'grupowa' && m.phase !== 'grupowa') return;
             if (currentPhase === 'pucharowa' && m.phase !== 'pucharowa') return;
-            
             if (currentPhase === 'grupowa' && currentGroupFilter !== 'ALL' && m.group !== currentGroupFilter) return;
             if (currentPhase === 'timeline' && currentDateFilter !== 'ALL' && m.date !== currentDateFilter) return;
 
@@ -362,7 +366,6 @@
                         customTeamNames[`rA_${matchFound.id}`] = String(apiMatch.score.fullTime.home);
                         customTeamNames[`rB_${matchFound.id}`] = String(apiMatch.score.fullTime.away);
                         
-                        // Zapis brórek live bezpośrednio do bazy przy pobraniu
                         await supabaseClient.from('typer_scores').upsert({ id: `rA_${matchFound.id}`, value: String(apiMatch.score.fullTime.home) });
                         await supabaseClient.from('typer_scores').upsert({ id: `rB_${matchFound.id}`, value: String(apiMatch.score.fullTime.away) });
                         changed = true;
@@ -416,7 +419,6 @@
         document.getElementById('score-p3').innerText = t3;
     }
 
-    // FIX: Użycie poprawnej nazwy 'supabaseClient' eliminuje błąd połączenia z chmurą
     async function saveDataToCloud() {
         if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
         
@@ -443,7 +445,6 @@
         }
     }
 
-    // FIX: Użycie poprawnej nazwy 'supabaseClient' pozwala na bezbłędne wczytanie danych
     async function loadDataFromCloud() {
         if(!supabaseClient) return;
         try {
@@ -488,7 +489,15 @@
         buildMatches();
     }
 
+    // ROZWIĄZANIE: Inicjalizacja połączenia następuje tutaj za pomocą window.supabase.createClient
     window.addEventListener('DOMContentLoaded', () => {
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabaseClient = window.supabase.createClient(SUPUPBASE_URL = SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (err) {
+            console.error("Błąd podczas inicjalizacji klienta Supabase:", err);
+        }
         buildDateFilters();
         loadDataFromCloud();
     });
