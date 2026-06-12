@@ -45,7 +45,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Gol drużyny = 1pkt</p>
+    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Różnica goli = 1pkt</p>
 
     <div class="leaderboard">
         <div class="player-score">💃 Wiktoria<span id="score-p1">0</span></div>
@@ -174,7 +174,7 @@
         { id: 86, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '2C', teamB: '2F' },
         { id: 87, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1H', teamB: '2J' },
         { id: 88, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1J', teamB: '2I' },
-        
+         
         { id: 89, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M73', teamB: 'Zwycięzca M74' },
         { id: 90, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M75', teamB: 'Zwycięzca M76' },
         { id: 91, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M77', teamB: 'Zwycięzca M78' },
@@ -257,7 +257,6 @@
         });
     }
 
-    // ZMODYFIKOWANA FUNKCJA: Używa darmowego proxy, aby ominąć blokadę przeglądarki
     async function fetchLiveResults() {
         try {
             const proxyUrl = "https://api.allorigins.win/get?url=";
@@ -265,7 +264,6 @@
             
             const response = await fetch(proxyUrl + targetUrl);
             const wrapper = await response.json();
-            // AllOrigins zwraca dane jako tekst w polu 'contents', musimy go przekształcić na obiekt
             const data = JSON.parse(wrapper.contents);
             
             if(!data.matches) return;
@@ -293,13 +291,30 @@
         }
     }
 
+    // ZMODYFIKOWANA REGULA PUNKTACJI: Klasyczne 3, 2, 1
     function getPoints(pA, pB, rA, rB) {
         if (pA === "" || pB === "" || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
         const realA = parseInt(rA), realB = parseInt(rB);
+        
+        // 1. Dokładny wynik -> 3 pkt
         if (predA === realA && predB === realB) return 3;
-        if (Math.sign(predA - predB) === Math.sign(realA - realB)) return 2;
-        if (predA === realA || predB === realB) return 1;
+        
+        const signPred = Math.sign(predA - predB);
+        const signReal = Math.sign(realA - realB);
+        
+        // Jeśli trafiono rozstrzygnięcie (zwycięzca lub remis)
+        if (signPred === signReal) {
+            // Remisy bez dokładnego wyniku -> automatycznie 2 pkt za rozstrzygnięcie
+            if (signReal === 0) return 2;
+            
+            // Mecze rozstrzygnięte: jeśli różnica goli jest identyczna -> 1 pkt
+            if ((predA - predB) === (realA - realB)) return 1;
+            
+            // Sam zwycięzca bez różnicy bramkowej -> 2 pkt
+            return 2;
+        }
+        
         return 0;
     }
 
@@ -319,7 +334,10 @@
                 
                 const pts = getPoints(pA, pB, rA, rB);
                 const b = document.getElementById(`pts${p}_${m.id}`);
-                if(b) { b.innerText = `${pts} pkt`; b.className = `pts-badge pts-${pts}`; }
+                if(b) { 
+                    b.innerText = `${pts} pkt`; 
+                    b.className = `pts-badge pts-${pts === 3 ? 3 : (pts === 2 ? 2 : (pts === 1 ? 1 : 0))}`; 
+                }
                 if(p===1) t1+=pts; if(p===2) t2+=pts; if(p===3) t3+=pts;
             }
         });
