@@ -47,7 +47,7 @@
 
 <div class="container">
     <h1>🏆 AUTOMATYCZNY TYPER MŚ 2026 🏆</h1>
-    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 2pkt | Różnica goli = 1pkt</p>
+    <p class="subtitle">Zasady: Dokładny wynik = 3pkt | Rozstrzygnięcie = 1pkt</p>
 
     <div class="admin-toggle">
         <button onclick="toggleAdminMode()">🔧 Tryb Pilota (Ręczne wpisywanie wyników)</button>
@@ -88,7 +88,7 @@
     let currentGroupFilter = 'ALL';
     let currentDateFilter = 'ALL';
     let adminMode = false;
-    let appData = {}; // Super szybka pamięć lokalna
+    let appData = {}; 
 
     const matches = [
         // KOLEJKA 1
@@ -140,8 +140,8 @@
         { id: 44, phase: 'grupowa', group: 'J', date: '23.06', teamA: 'Algieria', teamB: 'Jordania' },
         { id: 45, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Portugalia', teamB: 'Ghana' },
         { id: 46, phase: 'grupowa', group: 'K', date: '23.06', teamA: 'Panama', teamB: 'DR Konga' },
-        { id: 47, phase: 'grupowa', group: 'L', date: '23.06', teamA: 'Anglia', teamB: 'Uzbekistan' },
-        { id: 48, phase: 'grupowa', group: 'L', date: '24.06', teamA: 'Kolumbia', teamB: 'Chorwacja' },
+        { id: 47, phase: 'grupowa', group: 'L', date: '23.06', teamA: 'Anglia', teamB: 'Chorwacja' },
+        { id: 48, phase: 'grupowa', group: 'L', date: '24.06', teamA: 'Uzbekistan', teamB: 'Kolumbia' },
 
         // KOLEJKA 3
         { id: 49, phase: 'grupowa', group: 'A', date: '24.06', teamA: 'RPA', teamB: 'Korea Płd.' },
@@ -212,15 +212,13 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtZXdlZnd2cXhqeXJxZG54bnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTE2MTUsImV4cCI6MjA5NjY4NzYxNX0.qqwQowaI7JEcMpHSWTKFXL5kPcyiBWKLqeGvriUBMVA";
     const FOOTBALL_API_TOKEN = "c022840d3dee415784ddc5de74a16f44";
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let supabaseClient = null;
 
-    // FUNKCJA: Włączanie Trybu Admina
     function toggleAdminMode() {
         adminMode = !adminMode;
         buildMatches();
     }
 
-    // FUNKCJA: Renderowanie filtrów dla dat
     function buildDateFilters() {
         const dateContainer = document.getElementById('date-filters');
         if(!dateContainer) return;
@@ -234,13 +232,11 @@
         dateContainer.innerHTML = html;
     }
 
-    // PRZEBUDOWANA: Renderowanie meczów (czyta z pamięci appData)
     function buildMatches() {
         const container = document.getElementById('matches-container');
         container.innerHTML = '';
 
         matches.forEach(m => {
-            // Logika wyświetlania według aktywnych filtrów zakładek
             if (currentPhase === 'grupowa' && m.phase !== 'grupowa') return;
             if (currentPhase === 'pucharowa' && m.phase !== 'pucharowa') return;
             if (currentPhase === 'grupowa' && currentGroupFilter !== 'ALL' && m.group !== currentGroupFilter) return;
@@ -250,7 +246,6 @@
             card.className = `match-card ${m.phase === 'pucharowa' ? 'pucharowa' : ''}`;
             const infoGrupa = m.phase === 'grupowa' ? `GRUPA ${m.group}` : 'FAZA PUCHAROWA';
 
-            // Zawsze najpierw szukaj w pamięci (appData), a jeśli nie ma, weź domyślne z listy
             let nazwaA = appData[`nameA_${m.id}`] || m.teamA;
             let nazwaB = appData[`nameB_${m.id}`] || m.teamB;
             let rA = appData[`rA_${m.id}`] || "-";
@@ -266,7 +261,6 @@
             let teamBSection = `<span id="nameB_${m.id}">${nazwaB}</span>`;
             let sekcjaWyniku = `<span id="rA_${m.id}">${rA}</span><span>:</span><span id="rB_${m.id}">${rB}</span>`;
 
-            // Jeśli AdminMode jest włączony -> wstaw pola tekstowe (Inputs)
             if (adminMode) {
                 teamASection = `<input type="text" value="${nazwaA}" onchange="cacheLocal('nameA_${m.id}', this.value); saveAdminDirect('nameA_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
                 teamBSection = `<input type="text" value="${nazwaB}" onchange="cacheLocal('nameB_${m.id}', this.value); saveAdminDirect('nameB_${m.id}', this.value)" style="width: 80%; border: 1px dashed var(--warning); border-radius: 4px; padding: 4px; font-weight: bold; text-align: center;">`;
@@ -323,13 +317,11 @@
         calculatePoints();
     }
 
-    // SUPER WAŻNA FUNKCJA: Zapamiętuje na żywo to co wpiszesz (dzięki temu NIC nie znika po przełączeniu karty)
     function cacheLocal(key, value) {
         appData[key] = value;
         calculatePoints();
     }
 
-    // NATYCHMIASTOWY ZAPIS DLA ADMINA: Zapisuje oficjalny wynik w chmurze
     async function saveAdminDirect(id, value) {
         if(!supabaseClient) return;
         await supabaseClient.from('typer_scores').upsert({ id: id, value: String(value) });
@@ -374,7 +366,7 @@
         }
     }
 
-    // PUNKTY: Reguła 3 - 2 - 1
+    // PUNKTY: Reguła 3 - 1
     function getPoints(pA, pB, rA, rB) {
         if (pA === "" || pB === "" || rA === "-" || rB === "-") return 0;
         const predA = parseInt(pA), predB = parseInt(pB);
@@ -386,11 +378,9 @@
         const signPred = Math.sign(predA - predB);
         const signReal = Math.sign(realA - realB);
         
-        // 2. Rozstrzygnięcie lub Różnica Goli
+        // 2. Rozstrzygnięcie (kto wygrał lub remis) -> 1 pkt
         if (signPred === signReal) {
-            if (signReal === 0) return 2; // Remis zawsze 2 pkt
-            if ((predA - predB) === (realA - realB)) return 1; // Różnica Goli 1 pkt
-            return 2; // Zwykłe zwycięstwo 2 pkt
+            return 1;
         }
         
         return 0;
@@ -420,7 +410,6 @@
         document.getElementById('score-p3').innerText = t3;
     }
 
-    // ZAPIS GŁÓWNY TYPÓW GRACZY DO BAZY SUPABASE
     async function saveDataToCloud() {
         if(!supabaseClient) { alert("Brak połączenia z chmurą!"); return; }
         
@@ -445,7 +434,6 @@
         else alert("🎯 Wasze typy zostały zapisane na amen!");
     }
 
-    // ODCZYT GŁÓWNY Z BAZY SUPABASE
     async function loadDataFromCloud() {
         if(!supabaseClient) return;
         const { data } = await supabaseClient.from('typer_scores').select('*');
@@ -458,7 +446,6 @@
         buildMatches();
     }
 
-    // LOGIKA: Przełączanie Głównych ZAKŁADEK
     function switchPhase(phase) {
         currentPhase = phase;
         document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
@@ -470,7 +457,6 @@
         buildMatches();
     }
 
-    // LOGIKA: Przełączanie Grup
     function filterGroup(group) {
         currentGroupFilter = group;
         document.querySelectorAll('#group-filters .filter-btn').forEach(b => b.classList.remove('active'));
@@ -478,7 +464,6 @@
         buildMatches();
     }
 
-    // LOGIKA: Przełączanie Dni "Dzień po dniu"
     function filterDate(date) {
         currentDateFilter = date;
         document.querySelectorAll('#date-filters .filter-btn').forEach(b => b.classList.remove('active'));
@@ -487,8 +472,14 @@
         buildMatches();
     }
 
-    // START APLIKACJI
     window.addEventListener('DOMContentLoaded', () => {
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (err) {
+            console.error("Błąd połączenia z Supabase:", err);
+        }
         buildDateFilters();
         loadDataFromCloud();
     });
