@@ -1,19 +1,3 @@
-To już jest poziom "Pro"! Skoro matematyka bazy działa, wbudowałem prosto w przycisk **🪄 AKTUALIZUJ DRABINKĘ** prawdziwą sztuczną inteligencję turniejową.
-
-Od teraz ten przycisk **robi dosłownie wszystko**:
-
-1. **Analizuje tabele 12 grup:** Przelicza wszystkie punkty, różnice goli i strzelone bramki w grupach A-L na podstawie wyników, które padły.
-2. **Automatyczne awanse:** Sam zamienia "1A", "2B" itd. na faktyczne nazwy drużyn w drabince pucharowej.
-3. **8 Najlepszych Trzecich Miejsc:** Wybiera 8 drużyn z 3. miejsc z najlepszym bilansem i automatycznie przypisuje je do odpowiednich wolnych gniazd w rundzie 1/16!
-4. **Drabinka do samego finału:** Jeżeli mecz 1/16 jest rozegrany, sam przeciąga zwycięzcę do 1/8 i tak aż do samego finału.
-
-Dzięki temu jedyne, co musicie robić (albo robi to automat API), to **uzupełniać wyniki samych meczów**. Całą drabinkę ułoży jedno kliknięcie fioletowego przycisku!
-
-*(Pamiętaj: jeśli mecz w fazie pucharowej zakończy się remisem i wygraną w rzutach karnych, skrypt zatrzyma się w tym miejscu, bo nie wie, kto wygrał karne – wpiszesz wtedy drużynę ręcznie w trybie Admina)*.
-
-Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
-
-```html
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -187,33 +171,33 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
         { id: 71, phase: 'grupowa', group: 'L', date: '27.06', teamA: 'Chorwacja', teamB: 'Uzbekistan' },
         { id: 72, phase: 'grupowa', group: 'L', date: '27.06', teamA: 'Kolumbia', teamB: 'Anglia' },
 
-        // DRABINKA PUCHAROWA (1/16 Finału)
-        { id: 73, phase: 'pucharowa', group: 'P', date: '28.06 (1/16)', teamA: '1A', teamB: '3 C/E/F/H/I' },
-        { id: 74, phase: 'pucharowa', group: 'P', date: '28.06 (1/16)', teamA: '1E', teamB: '3 A/B/C/D/F' },
-        { id: 75, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: '1I', teamB: '3 C/D/E/J/K' },
-        { id: 76, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: '2K', teamB: '2L' },
-        { id: 77, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: '1C', teamB: '3 A/B/F/G/I' },
-        { id: 78, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: '2A', teamB: '2B' },
-        { id: 79, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: '1G', teamB: '3 A/E/H/I/J' },
-        { id: 80, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: '2E', teamB: '2F' },
-        { id: 81, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: '1B', teamB: '3 E/F/G/I/J' },
-        { id: 82, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: '2D', teamB: '2G' },
-        { id: 83, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1K', teamB: '2H' },
-        { id: 84, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1L', teamB: '3 E/H/I/J/K' },
-        { id: 85, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1D', teamB: '3 B/E/F/I/J' },
-        { id: 86, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '2C', teamB: '2F' },
-        { id: 87, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1H', teamB: '2J' },
-        { id: 88, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: '1J', teamB: '2I' },
+        // DRABINKA PUCHAROWA (1/16 Finału) - OFICJALNE PARY FIFA 2026
+        { id: 73, phase: 'pucharowa', group: 'P', date: '28.06 (1/16)', teamA: 'RPA', teamB: 'Kanada' },
+        { id: 74, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: 'Niemcy', teamB: 'Paragwaj' },
+        { id: 75, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: 'Holandia', teamB: 'Maroko' },
+        { id: 76, phase: 'pucharowa', group: 'P', date: '29.06 (1/16)', teamA: 'Brazylia', teamB: 'Japonia' },
+        { id: 77, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: 'Francja', teamB: 'Szwecja' },
+        { id: 78, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: 'WKS', teamB: 'Norwegia' },
+        { id: 79, phase: 'pucharowa', group: 'P', date: '30.06 (1/16)', teamA: 'Meksyk', teamB: 'Ekwador' },
+        { id: 80, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: 'Anglia', teamB: 'DR Konga' },
+        { id: 81, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: 'USA', teamB: 'Bośnia i Herc.' },
+        { id: 82, phase: 'pucharowa', group: 'P', date: '01.07 (1/16)', teamA: 'Belgia', teamB: 'Senegal' },
+        { id: 83, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: 'Portugalia', teamB: 'Chorwacja' },
+        { id: 84, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: 'Hiszpania', teamB: 'Austria' },
+        { id: 85, phase: 'pucharowa', group: 'P', date: '02.07 (1/16)', teamA: 'Szwajcaria', teamB: 'Algieria' },
+        { id: 86, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: 'Argentyna', teamB: 'Rep. Z. Przylądka' },
+        { id: 87, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: 'Kolumbia', teamB: 'Ghana' },
+        { id: 88, phase: 'pucharowa', group: 'P', date: '03.07 (1/16)', teamA: 'Australia', teamB: 'Egipt' },
         
         // 1/8 Finału
-        { id: 89, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M73', teamB: 'Zwycięzca M74' },
-        { id: 90, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M75', teamB: 'Zwycięzca M76' },
-        { id: 91, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M77', teamB: 'Zwycięzca M78' },
+        { id: 89, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M74', teamB: 'Zwycięzca M77' },
+        { id: 90, phase: 'pucharowa', group: 'P', date: '04.07 (1/8)', teamA: 'Zwycięzca M73', teamB: 'Zwycięzca M75' },
+        { id: 91, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M76', teamB: 'Zwycięzca M78' },
         { id: 92, phase: 'pucharowa', group: 'P', date: '05.07 (1/8)', teamA: 'Zwycięzca M79', teamB: 'Zwycięzca M80' },
-        { id: 93, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M81', teamB: 'Zwycięzca M82' },
-        { id: 94, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M83', teamB: 'Zwycięzca M84' },
-        { id: 95, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M85', teamB: 'Zwycięzca M86' },
-        { id: 96, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M87', teamB: 'Zwycięzca M88' },
+        { id: 93, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M83', teamB: 'Zwycięzca M84' },
+        { id: 94, phase: 'pucharowa', group: 'P', date: '06.07 (1/8)', teamA: 'Zwycięzca M81', teamB: 'Zwycięzca M82' },
+        { id: 95, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M86', teamB: 'Zwycięzca M88' },
+        { id: 96, phase: 'pucharowa', group: 'P', date: '07.07 (1/8)', teamA: 'Zwycięzca M85', teamB: 'Zwycięzca M87' },
 
         // Ćwierćfinały
         { id: 97, phase: 'pucharowa', group: 'P', date: '09.07 (1/4)', teamA: 'Zwycięzca M89', teamB: 'Zwycięzca M90' },
@@ -349,53 +333,7 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
         await supabaseClient.from('typer_scores').upsert({ id: id, value: String(value) });
     }
 
-    // --- MAGIA DRABINKI --- //
-    // Oblicza 12 tabel, wyciąga 1, 2, i najlepsze 3 miejsca i pcha wyniki aż do finału
-    function calculateGroupStandings() {
-        let standings = {};
-        const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-        
-        groups.forEach(g => { standings[g] = {}; });
-
-        matches.filter(m => m.phase === 'grupowa').forEach(m => {
-            let nameA = appData[`nameA_${m.id}`] || m.teamA;
-            let nameB = appData[`nameB_${m.id}`] || m.teamB;
-
-            if(!standings[m.group][nameA]) standings[m.group][nameA] = { name: nameA, pts: 0, gf: 0, ga: 0, gd: 0 };
-            if(!standings[m.group][nameB]) standings[m.group][nameB] = { name: nameB, pts: 0, gf: 0, ga: 0, gd: 0 };
-
-            let rA = appData[`rA_${m.id}`];
-            let rB = appData[`rB_${m.id}`];
-            
-            if (rA !== undefined && rB !== undefined && rA !== "-" && rB !== "-" && rA !== "" && rB !== "") {
-                let scoreA = parseInt(rA);
-                let scoreB = parseInt(rB);
-                
-                standings[m.group][nameA].gf += scoreA;
-                standings[m.group][nameA].ga += scoreB;
-                standings[m.group][nameA].gd += (scoreA - scoreB);
-                
-                standings[m.group][nameB].gf += scoreB;
-                standings[m.group][nameB].ga += scoreA;
-                standings[m.group][nameB].gd += (scoreB - scoreA);
-                
-                if (scoreA > scoreB) { standings[m.group][nameA].pts += 3; }
-                else if (scoreA < scoreB) { standings[m.group][nameB].pts += 3; }
-                else { standings[m.group][nameA].pts += 1; standings[m.group][nameB].pts += 1; }
-            }
-        });
-
-        let sorted = {};
-        groups.forEach(g => {
-            sorted[g] = Object.values(standings[g]).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                if (b.gd !== a.gd) return b.gd - a.gd;
-                return b.gf - a.gf;
-            });
-        });
-        return sorted;
-    }
-
+    // FUNKCJA POMOCNICZA DLA DRABINKI: Sprawdza, kto zagra dalej
     function getKnockoutResult(matchId, type) {
         let rA = appData[`rA_${matchId}`];
         let rB = appData[`rB_${matchId}`];
@@ -410,70 +348,23 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
         let teamA = appData[`nameA_${matchId}`] || refMatch.teamA;
         let teamB = appData[`nameB_${matchId}`] || refMatch.teamB;
 
-        // Jeśli jest równo (karne) automat nie pociągnie - trzeba wpisać ręcznie w Trybie Pilota
+        // Jeśli mecz fazy pucharowej zakończy się remisem (karne), system nie podejmie decyzji - wynik wpiszesz ręcznie w Trybie Pilota
         if (scoreA > scoreB) return type === 'winner' ? teamA : teamB;
         if (scoreB > scoreA) return type === 'winner' ? teamB : teamA;
         
         return null;
     }
 
+    // MAGICZNA FUNKCJA DRABINKI
     async function autoResolveBracket() {
         if(!supabaseClient) { alert("Brak połączenia z bazą!"); return; }
+        
         let updates = [];
         let changed = false;
 
-        // 1. Z grup do 1/16 finału
-        let st = calculateGroupStandings();
-        let thirdPlaces = [];
-        ['A','B','C','D','E','F','G','H','I','J','K','L'].forEach(g => {
-            if(st[g] && st[g].length > 2) thirdPlaces.push({ group: g, team: st[g][2] });
-        });
-        
-        thirdPlaces.sort((a,b) => {
-            if(b.team.pts !== a.team.pts) return b.team.pts - a.team.pts;
-            if(b.team.gd !== a.team.gd) return b.team.gd - a.team.gd;
-            return b.team.gf - a.team.gf;
-        });
-        let best8Thirds = thirdPlaces.slice(0, 8);
-        
-        let mappedTeams = {};
-        ['A','B','C','D','E','F','G','H','I','J','K','L'].forEach(g => {
-            if(st[g] && st[g][0]) mappedTeams[`1${g}`] = st[g][0].name;
-            if(st[g] && st[g][1]) mappedTeams[`2${g}`] = st[g][1].name;
-        });
-
-        let usedThirds = new Set();
-        matches.filter(m => m.phase === 'pucharowa').forEach(m => {
-            ['teamA', 'teamB'].forEach(side => {
-                let originalText = m[side];
-                if (originalText.startsWith('3 ')) {
-                    let allowedGroups = originalText.replace('3 ', '').split('/');
-                    for (let t of best8Thirds) {
-                        if (allowedGroups.includes(t.group) && !usedThirds.has(t.group)) {
-                            mappedTeams[originalText] = t.team.name;
-                            usedThirds.add(t.group);
-                            break;
-                        }
-                    }
-                }
-            });
-        });
-
-        matches.filter(m => m.phase === 'pucharowa' && m.id >= 73 && m.id <= 88).forEach(m => {
-            if (mappedTeams[m.teamA] && appData[`nameA_${m.id}`] !== mappedTeams[m.teamA]) {
-                appData[`nameA_${m.id}`] = mappedTeams[m.teamA];
-                updates.push({ id: `nameA_${m.id}`, value: mappedTeams[m.teamA] });
-                changed = true;
-            }
-            if (mappedTeams[m.teamB] && appData[`nameB_${m.id}`] !== mappedTeams[m.teamB]) {
-                appData[`nameB_${m.id}`] = mappedTeams[m.teamB];
-                updates.push({ id: `nameB_${m.id}`, value: mappedTeams[m.teamB] });
-                changed = true;
-            }
-        });
-
-        // 2. Rozstrzyganie samej drabinki (zwycięzcy do kolejnych meczów)
+        // Rozstrzyganie drabinki - pcha drużyny od 1/8 do samego finału
         matches.filter(m => m.phase === 'pucharowa' && m.id > 88).forEach(m => {
+            // Analiza Drużyny A
             if (m.teamA.startsWith('Zwycięzca M')) {
                 let refId = parseInt(m.teamA.replace('Zwycięzca M', ''));
                 let winner = getKnockoutResult(refId, 'winner');
@@ -492,6 +383,7 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
                 }
             }
 
+            // Analiza Drużyny B
             if (m.teamB.startsWith('Zwycięzca M')) {
                 let refId = parseInt(m.teamB.replace('Zwycięzca M', ''));
                 let winner = getKnockoutResult(refId, 'winner');
@@ -517,13 +409,12 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
                 alert("Błąd podczas przesuwania drużyn w chmurze: " + error.message);
             } else {
                 buildMatches();
-                alert("🪄 Magia! Tabele przeliczone, a zwycięzcy awansowali w drabince pucharowej!");
+                alert("🪄 Magia! Zwycięzcy awansowali w drabince pucharowej!");
             }
         } else {
             alert("Brak nowych, rozstrzygniętych spotkań. System nie ma kogo przepchnąć dalej.");
         }
     }
-    // --- KONIEC MAGII --- //
 
     async function fetchLiveResults() {
         try {
@@ -684,3 +575,5 @@ Skasuj zawartość na GitHubie i ciesz się pełnym automatem:
 </script>
 </body>
 </html>
+
+```
